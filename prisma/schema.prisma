@@ -12,3 +12,32 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+enum role_enum {
+  OWNER
+  CUSTOMER
+}
+
+model User {
+  id           String    @id @default(uuid())
+  firstname    String
+  lastname     String
+  phone_number String    @unique
+  house_number String
+  address      String
+  mail         String    @unique
+  password     String
+  role         role_enum @default(CUSTOMER)
+  Zone         Zone[]
+}
+
+model Zone {
+  id        Int    @id @default(autoincrement())
+  zone_name String @unique
+  userId    String
+  users     User   @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id Int @id @default(autoincrement())
+}
