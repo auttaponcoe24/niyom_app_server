@@ -18,26 +18,84 @@ enum role_enum {
   CUSTOMER
 }
 
+enum status_enum {
+  PENDING
+  REJECT
+  SUCCESS
+}
+
 model User {
-  id           String    @id @default(uuid())
+  id          String      @id @default(uuid())
+  firstname   String
+  lastname    String
+  id_passpost String      @unique
+  address     String
+  mail        String      @unique
+  password    String
+  role        role_enum   @default(CUSTOMER)
+  status      status_enum @default(PENDING)
+  createAt    DateTime    @default(now())
+  updateAt    DateTime    @updatedAt
+  Payments    Payment[]
+}
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  id_passpost  String   @unique
   firstname    String
   lastname     String
-  phone_number String    @unique
+  phone_number String   @unique
   house_number String
-  address      String
-  mail         String    @unique
-  password     String
-  role         role_enum @default(CUSTOMER)
-  Zone         Zone[]
+  createAt     DateTime @default(now())
+  updateAt     DateTime @updatedAt
+  ZoneId       Int
+  zone         Zone     @relation(fields: [zoneId], references: [id])
+  zoneId       Int
 }
 
 model Zone {
-  id        Int    @id @default(autoincrement())
-  zone_name String @unique
-  userId    String
-  users     User   @relation(fields: [userId], references: [id])
+  id           Int           @id @default(autoincrement())
+  zone_name    String        @unique
+  Customers    Customer[]
+  Transactions Transaction[]
+}
+
+enum type_transaction {
+  W
+  E
 }
 
 model Transaction {
-  id Int @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
+  month         String
+  year          String
+  unit_old_date Int
+  unit_new_date Int
+  price         Decimal          @db.Decimal(10, 2)
+  over_due      Decimal?         @db.Decimal(10, 2)
+  total_price   Decimal          @db.Decimal(10, 2)
+  type          type_transaction @default(W)
+  createAt      DateTime         @default(now())
+  updateAt      DateTime         @updatedAt
+  zoneId        Int
+  zone          Zone             @relation(fields: [zoneId], references: [id])
+  paymentId     Int
+  payment       Payment          @relation(fields: [paymentId], references: [id])
+}
+
+enum status_payment {
+  PENDING
+  REJECT
+  SUCCESS
+}
+
+model Payment {
+  id           Int            @id @default(autoincrement())
+  slip_payment String?
+  status       status_payment @default(PENDING)
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
+  Transactions Transaction[]
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
 }
