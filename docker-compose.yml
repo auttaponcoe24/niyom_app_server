@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  mysql:
+    container_name: mysql
+    restart: always
+    image: mysql:8.0
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_ROOT_PASSWORD=P@ssw0rd
+      - MYSQL_USER=auttapon
+      - MYSQL_PASSWORD=P@ssw0rd
+      - MYSQL_DATABASE=niyom_app
+    networks:
+      - network-connect
+networks:
+  network-connect:
+    name: join-network

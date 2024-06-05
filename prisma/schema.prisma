@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,17 +5,6 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-}
-
-enum role_enum {
-  OWNER
-  CUSTOMER
-}
-
-enum status_enum {
-  PENDING
-  REJECT
-  SUCCESS
 }
 
 model User {
@@ -48,9 +31,8 @@ model Customer {
   house_number String
   createAt     DateTime @default(now())
   updateAt     DateTime @updatedAt
-  ZoneId       Int
-  zone         Zone     @relation(fields: [zoneId], references: [id])
   zoneId       Int
+  zone         Zone     @relation(fields: [zoneId], references: [id])
 }
 
 model Zone {
@@ -58,11 +40,6 @@ model Zone {
   zone_name    String        @unique
   Customers    Customer[]
   Transactions Transaction[]
-}
-
-enum type_transaction {
-  W
-  E
 }
 
 model Transaction {
@@ -78,15 +55,9 @@ model Transaction {
   createAt      DateTime         @default(now())
   updateAt      DateTime         @updatedAt
   zoneId        Int
-  zone          Zone             @relation(fields: [zoneId], references: [id])
   paymentId     Int
   payment       Payment          @relation(fields: [paymentId], references: [id])
-}
-
-enum status_payment {
-  PENDING
-  REJECT
-  SUCCESS
+  zone          Zone             @relation(fields: [zoneId], references: [id])
 }
 
 model Payment {
@@ -95,7 +66,29 @@ model Payment {
   status       status_payment @default(PENDING)
   createAt     DateTime       @default(now())
   updateAt     DateTime       @updatedAt
-  Transactions Transaction[]
   userId       String
   user         User           @relation(fields: [userId], references: [id])
+  Transactions Transaction[]
+}
+
+enum role_enum {
+  OWNER
+  CUSTOMER
+}
+
+enum status_enum {
+  PENDING
+  REJECT
+  SUCCESS
+}
+
+enum type_transaction {
+  W
+  E
+}
+
+enum status_payment {
+  PENDING
+  REJECT
+  SUCCESS
 }
