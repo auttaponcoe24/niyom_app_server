@@ -29,36 +29,15 @@
       "@/*": [
         "*"
       ],
-      "@config": [
-        "config"
-      ],
-      "@controllers/*": [
+      "@/controllers/*": [
         "controllers/*"
       ],
-      "@dtos/*": [
-        "dtos/*"
-      ],
-      "@exceptions/*": [
-        "exceptions/*"
-      ],
-      "@interfaces/*": [
-        "interfaces/*"
-      ],
-      "@middlewares/*": [
+      "@/middlewares/*": [
         "middlewares/*"
       ],
-      "@routes/*": [
+      "@/routes/*": [
         "routes/*"
-      ],
-      "@services/*": [
-        "services/*"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ],
-      "@providers/*": [
-        "providers/*"
-      ],
+      ]
     }
   },
   "include": [

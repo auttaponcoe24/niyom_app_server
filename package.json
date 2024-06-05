@@ -4,7 +4,22 @@
 	"main": "index.js",
 	"license": "MIT",
 	"scripts": {
-		"dev": "nodemon"
+		"start": "npm run build && cross-env NODE_ENV=production node dist/server.js",
+		"dev": "nodemon",
+		"build": "swc src -d dist --source-maps --copy-files",
+		"build:tsc": "tsc && tsc-alias",
+		"test": "jest --forceExit --detectOpenHandles",
+		"lint": "eslint --ignore-path .gitignore --ext .ts src/",
+		"lint:fix": "npm run lint -- --fix",
+		"prisma:db": "npx prisma studio",
+		"prisma:init": "prisma init",
+		"prisma:migrate": "prisma migrate dev --preview-feature",
+		"prisma:generate": "prisma generate",
+		"prisma:deploy": "prisma migrate deploy",
+		"prisma:reset": "prisma migrate reset --force",
+		"deploy:prod": "npm run build && pm2 start ecosystem.config.js --only prod",
+		"deploy:dev": "pm2 start ecosystem.config.js --only dev",
+		"check:script": "npx ts-node src/scripts/checkProvider.ts"
 	},
 	"dependencies": {
 		"@prisma/client": "^5.14.0",
