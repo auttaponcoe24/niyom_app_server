@@ -37,6 +37,8 @@
 		"uuid": "^9.0.1"
 	},
 	"devDependencies": {
+		"@swc/cli": "^0.3.12",
+		"@swc/core": "^1.5.25",
 		"@types/bcryptjs": "^2.4.6",
 		"@types/cors": "^2.8.17",
 		"@types/morgan": "^1.9.9",
