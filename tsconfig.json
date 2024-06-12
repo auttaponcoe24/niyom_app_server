@@ -7,7 +7,8 @@
       "esnext.asynciterable"
     ],
     "typeRoots": [
-      "node_modules/@types"
+      "./node_modules/@types",
+      "./src/types"
     ],
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
@@ -24,13 +25,16 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "importHelpers": true,
-    "baseUrl": "src",
+    "baseUrl": "src", // เปิดใช้งาน baseUrl
     "paths": {
       "@/*": [
-        "*"
+        "./*"
       ],
       "@/controllers/*": [
         "controllers/*"
+      ],
+      "@/interfaces/*": [
+        "interfaces/*"
       ],
       "@/middlewares/*": [
         "middlewares/*"
@@ -40,6 +44,9 @@
       ],
       "@/validators/*": [
         "validators/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
       ]
     }
   },
