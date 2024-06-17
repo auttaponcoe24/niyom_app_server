@@ -13,7 +13,7 @@ model User {
   lastname    String
   id_passpost String      @unique
   address     String
-  mail        String      @unique
+  email       String      @unique
   password    String
   role        role_enum   @default(CUSTOMER)
   status      status_enum @default(PENDING)

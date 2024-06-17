@@ -2,8 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../models/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { registerSchema } from "@/validators/auth-validator";
+import { loginSchema, registerSchema } from "@/validators/auth-validator";
 import { IUser } from "@/interfaces/user-interface";
+import createError from "@/utils/create-error";
+import Joi from "joi";
 
 export const register = async (
 	req: Request,
@@ -42,11 +44,96 @@ export const register = async (
 		delete data.password;
 		// Send a response back to the client
 		res.status(201).json({
-			message: "User created successfully",
+			message: "ok",
 			user: data,
 			accessToken: accessToken,
 		});
 	} catch (error) {
 		next(error); // Pass errors to the error handler middleware
+	}
+};
+
+export const login = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const {
+			value,
+			error,
+		}: {
+			value: {
+				email: string;
+				password: string;
+			};
+			error: Joi.ValidationError;
+		} = loginSchema.validate(req.body);
+
+		if (error) {
+			return next(createError("email incorrect or password incorrect", 400));
+		}
+
+		const user = await prisma.user.findUnique({
+			where: {
+				email: value.email,
+			},
+		});
+
+		if (!user) {
+			return next(createError("mail is not found", 400));
+		}
+
+		const isMatch = await bcrypt.compare(value.password, user.password);
+		if (!isMatch) {
+			return next(createError("password incorrect", 400));
+		}
+
+		const payload = {
+			id: user.id,
+			id_passpost: user.id_passpost,
+			firstname: user.firstname,
+			lastname: user.lastname,
+		};
+
+		const accessToken = jwt.sign(
+			payload,
+			process.env.JWT_SECREY || "secretKeyRandom",
+			{ expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+		);
+
+		delete user.password;
+
+		res.status(200).json({
+			message: "ok",
+			user: user,
+			accessToken: accessToken,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getProfile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		// const { id_passpost } = req.user;
+
+		// const user = await prisma.user.findUnique({
+		// 	where: {
+		// 		id_passpost: id_passpost,
+		// 	},
+		// });
+
+		// if (!user) {
+		// 	return next(createError("user is not found", 400));
+		// }
+
+		res.status(200).json({ message: "ok", user: req.user });
+	} catch (error) {
+		next(error);
 	}
 };

@@ -3,7 +3,7 @@ export interface IUser {
 	lastname: string;
 	address: string;
 	id_passpost: string;
-	mail: string;
+	email: string;
 	password: string;
 	confirm_password: string;
 	role?: "OWNER" | "CUSTOMER";

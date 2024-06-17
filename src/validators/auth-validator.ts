@@ -5,7 +5,7 @@ export const registerSchema = Joi.object({
 	lastname: Joi.string().trim().required(),
 	address: Joi.string().trim().required(),
 	id_passpost: Joi.string().trim().required(),
-	mail: Joi.string().email().required(),
+	email: Joi.string().email().required(),
 	password: Joi.string().pattern(new RegExp("^[a-zA-Z0-9]{3,30}$")).required(),
 	confirm_password: Joi.any().valid(Joi.ref("password")).required().messages({
 		"any.only": "Confirm password must match password",
@@ -14,5 +14,11 @@ export const registerSchema = Joi.object({
 	status: Joi.string().optional(),
 });
 
-// const validateUser = (user: any) => userSchema.validate(user);
-// export { validateUser };
+export const loginSchema = Joi.object({
+	email: Joi.string()
+		.pattern(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{3,15}$/)
+		.required(),
+	password: Joi.string()
+		.pattern(/^[a-zA-Z0-9]{6,30}$/)
+		.required(),
+});

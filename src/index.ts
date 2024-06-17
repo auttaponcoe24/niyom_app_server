@@ -11,9 +11,9 @@ import authRoute from "./routes/auth-route";
 dotenv.config();
 const app = express();
 app.use(cors());
+app.use(morgan("dev"));
 
 app.use(express.json());
-app.use(morgan("dev"));
 
 app.get("/", async (req: Request, res: Response) => {
 	const test: string = "Hello world";
@@ -21,6 +21,7 @@ app.get("/", async (req: Request, res: Response) => {
 });
 
 app.use("/auth", authRoute);
+app.use("/customer");
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);

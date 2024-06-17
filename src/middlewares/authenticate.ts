@@ -49,3 +49,5 @@ const authMiddleware = async (
 		next(error);
 	}
 };
+
+export default authMiddleware;
