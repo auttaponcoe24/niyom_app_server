@@ -6,8 +6,8 @@ const router = Router();
 
 router.post("/sign-up", register);
 
-router.post("sign-in", login);
+router.post("/sign-in", login);
 
-router.get("profile", authMiddleware, getProfile);
+router.get("/profile", authMiddleware, getProfile);
 
 export default router;

@@ -22,7 +22,7 @@ export const register = async (
 		}
 
 		// Hash the password
-		value.address = await bcrypt.hash(value.password, 12);
+		value.password = await bcrypt.hash(value.password, 12);
 
 		// Create the user in the database
 		const data = await prisma.user.create({
@@ -33,11 +33,12 @@ export const register = async (
 			id_passpost: data.id_passpost,
 			firstname: data.firstname,
 			lastname: data.lastname,
+			role: data.role,
 		};
 
 		const accessToken = jwt.sign(
 			payload,
-			process.env.JWT_SECREY || "secretKeyRandom",
+			process.env.JWT_SECREY_KEY || "secretKeyRandom",
 			{ expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
 		);
 
@@ -94,11 +95,12 @@ export const login = async (
 			id_passpost: user.id_passpost,
 			firstname: user.firstname,
 			lastname: user.lastname,
+			role: user.role,
 		};
 
 		const accessToken = jwt.sign(
 			payload,
-			process.env.JWT_SECREY || "secretKeyRandom",
+			process.env.JWT_SECRET_KEY || "secretKeyRandom",
 			{ expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
 		);
 
@@ -120,18 +122,6 @@ export const getProfile = async (
 	next: NextFunction
 ) => {
 	try {
-		// const { id_passpost } = req.user;
-
-		// const user = await prisma.user.findUnique({
-		// 	where: {
-		// 		id_passpost: id_passpost,
-		// 	},
-		// });
-
-		// if (!user) {
-		// 	return next(createError("user is not found", 400));
-		// }
-
 		res.status(200).json({ message: "ok", user: req.user });
 	} catch (error) {
 		next(error);

@@ -8,6 +8,7 @@ interface IPayload extends JwtPayload {
 	id_passpost: string;
 	firstname: string;
 	lastname: string;
+	role: "OWNER" | "CUSTOMER";
 }
 
 const authMiddleware = async (
@@ -22,16 +23,17 @@ const authMiddleware = async (
 		}
 
 		const token = authorization.split(" ")[1];
+
 		const payload = jwt.verify(
 			token,
-			process.env.JWT_SECRET || "secretKeyRandom"
+			process.env.JWT_SECRET_KEY || "secretKeyRandom"
 		) as IPayload;
 
 		// const { id_passpost } = payload;
 
 		const user = await prisma.user.findUnique({
 			where: {
-				id_passpost: payload.id_passpost,
+				id: payload.id,
 			},
 		});
 
@@ -40,6 +42,7 @@ const authMiddleware = async (
 		}
 
 		delete user.password;
+
 		req.user = user;
 		next();
 	} catch (error) {

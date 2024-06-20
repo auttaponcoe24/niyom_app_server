@@ -3,10 +3,14 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import morgan from "morgan";
 
+// Middlewares
 import errorMiddlewares from "./middlewares/error";
 import notFoundMiddlewares from "./middlewares/not-found";
 
-import authRoute from "./routes/auth-route";
+// Routes
+import authRoute from "@/routes/auth-route";
+import customerRoute from "@/routes/customer-route";
+import zoneRoute from "@/routes/zone-route";
 
 dotenv.config();
 const app = express();
@@ -21,7 +25,8 @@ app.get("/", async (req: Request, res: Response) => {
 });
 
 app.use("/auth", authRoute);
-app.use("/customer");
+app.use("/customer", customerRoute);
+app.use("/zone", zoneRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
