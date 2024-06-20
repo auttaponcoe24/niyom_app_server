@@ -127,3 +127,30 @@ export const getProfile = async (
 		next(error);
 	}
 };
+
+export const editProfile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { id } = req.user;
+		const { firstname, lastname, id_passpost, address } = req.body;
+
+		const findUser = await prisma.user.update({
+			where: {
+				id: id,
+			},
+			data: {
+				firstname,
+				lastname,
+				id_passpost,
+				address,
+			},
+		});
+
+		res.status(201).json({ message: "ok", result: findUser });
+	} catch (error) {
+		next(error);
+	}
+};

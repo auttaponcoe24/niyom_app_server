@@ -39,7 +39,11 @@ export const getAllCustomer = async (
 			return next(createError("Is not owner", 200));
 		}
 
-		const result = await prisma.customer.findMany({});
+		const result = await prisma.customer.findMany({
+			include: {
+				zone: true,
+			},
+		});
 
 		res.status(200).json({ message: "ok", result });
 	} catch (error) {
@@ -61,6 +65,7 @@ export const editCustomer = async (
 			lastname,
 			phone_number,
 			house_number,
+			address,
 			zoneId,
 		} = req.body;
 
@@ -84,6 +89,7 @@ export const editCustomer = async (
 				lastname,
 				phone_number,
 				house_number,
+				address,
 				zoneId,
 			},
 		});

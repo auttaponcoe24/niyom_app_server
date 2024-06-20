@@ -11,6 +11,7 @@ import notFoundMiddlewares from "./middlewares/not-found";
 import authRoute from "@/routes/auth-route";
 import customerRoute from "@/routes/customer-route";
 import zoneRoute from "@/routes/zone-route";
+import transactionRoute from "@/routes/transaction-route";
 
 dotenv.config();
 const app = express();
@@ -27,6 +28,7 @@ app.get("/", async (req: Request, res: Response) => {
 app.use("/auth", authRoute);
 app.use("/customer", customerRoute);
 app.use("/zone", zoneRoute);
+app.use("/transaction", transactionRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);

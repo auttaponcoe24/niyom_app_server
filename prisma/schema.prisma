@@ -23,16 +23,18 @@ model User {
 }
 
 model Customer {
-  id           Int      @id @default(autoincrement())
-  id_passpost  String   @unique
+  id           Int           @id @default(autoincrement())
+  id_passpost  String        @unique
   firstname    String
   lastname     String
-  phone_number String   @unique
+  phone_number String        @unique
   house_number String
-  createAt     DateTime @default(now())
-  updateAt     DateTime @updatedAt
+  address      String?
+  createAt     DateTime      @default(now())
+  updateAt     DateTime      @updatedAt
   zoneId       Int
-  zone         Zone     @relation(fields: [zoneId], references: [id])
+  zone         Zone          @relation(fields: [zoneId], references: [id])
+  Transactions Transaction[]
 }
 
 model Zone {
@@ -43,21 +45,31 @@ model Zone {
 }
 
 model Transaction {
-  id            Int              @id @default(autoincrement())
+  id            Int    @id @default(autoincrement())
   month         String
   year          String
   unit_old_date Int
   unit_new_date Int
-  price         Decimal          @db.Decimal(10, 2)
-  over_due      Decimal?         @db.Decimal(10, 2)
-  total_price   Decimal          @db.Decimal(10, 2)
-  type          type_transaction @default(W)
-  createAt      DateTime         @default(now())
-  updateAt      DateTime         @updatedAt
-  zoneId        Int
-  paymentId     Int
-  payment       Payment          @relation(fields: [paymentId], references: [id])
-  zone          Zone             @relation(fields: [zoneId], references: [id])
+
+  type                  type_transaction       @default(W)
+  createAt              DateTime               @default(now())
+  updateAt              DateTime               @updatedAt
+  zoneId                Int
+  zone                  Zone                   @relation(fields: [zoneId], references: [id])
+  paymentId             Int?
+  payment               Payment?               @relation(fields: [paymentId], references: [id])
+  customerId            Int
+  customer              Customer               @relation(fields: [customerId], references: [id])
+  CalculateTransactions CalculateTransaction[]
+}
+
+model CalculateTransaction {
+  id            Int         @id @default(autoincrement())
+  price         Decimal     @db.Decimal(10, 2)
+  over_due      Decimal?    @db.Decimal(10, 2)
+  total_price   Decimal     @db.Decimal(10, 2)
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 }
 
 model Payment {

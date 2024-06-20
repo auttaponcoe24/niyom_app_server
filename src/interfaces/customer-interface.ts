@@ -5,6 +5,7 @@ export interface ICustomer {
 	lastname: string;
 	phone_number: string;
 	house_number: string;
+	address?: string;
 	createAt?: Date;
 	updateAt?: Date;
 	zoneId: number;
