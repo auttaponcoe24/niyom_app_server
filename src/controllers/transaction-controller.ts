@@ -33,16 +33,21 @@ export const createTransaction = async (
 
 		let resultCal = {
 			price: 0,
-			total_price: 0,
 			over_due: 0,
+			total_price: 0,
 		};
 
 		if (transaction.type === "W") {
 			resultCal.price =
 				(transaction.unit_new_date - transaction.unit_old_date) * 16 + 50;
 		} else if (transaction.type === "E") {
-			resultCal.price =
-				(transaction.unit_new_date - transaction.unit_old_date) * 6 + 50;
+			let a = (transaction.unit_new_date - transaction.unit_old_date) * 7 + 50;
+			let b =
+				((transaction.unit_new_date - transaction.unit_old_date) * 7 + 50) *
+				0.07;
+			// resultCal.price =
+			// 	(transaction.unit_new_date - transaction.unit_old_date) * 7 + 50;
+			resultCal.price = a + b;
 		}
 
 		const calculateTransaction = await prisma.calculateTransaction.create({
