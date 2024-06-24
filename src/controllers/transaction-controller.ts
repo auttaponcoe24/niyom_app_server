@@ -50,16 +50,44 @@ export const createTransaction = async (
 			resultCal.price = a + b;
 		}
 
-		const calculateTransaction = await prisma.calculateTransaction.create({
-			data: {
-				price: resultCal.price,
-				total_price: resultCal.total_price,
-				over_due: resultCal.over_due,
-				transactionId: transaction.id,
-			},
-		});
+		// find ยอดค้าง
+		let findOverDue;
+		if (month === 1) {
+			findOverDue = await prisma.transaction.findFirst({
+				where: {
+					AND: [
+						{
+							month: "12",
+							year: String(year - 1),
+						},
+					],
+				},
+			});
+		} else {
+			findOverDue = await prisma.transaction.findFirst({
+				where: {
+					AND: [
+						{
+							month: String(month - 1),
+							year: year,
+						},
+					],
+				},
+			});
+			console.log("findOverDuey", findOverDue);
+		}
+		console.log("findOverDue", findOverDue);
 
-		res.status(201).json({ message: "ok", transaction, calculateTransaction });
+		// const calculateTransaction = await prisma.calculateTransaction.create({
+		// 	data: {
+		// 		price: resultCal.price,
+		// 		total_price: resultCal.total_price,
+		// 		over_due: resultCal.over_due,
+		// 		transactionId: transaction.id,
+		// 	},
+		// });
+
+		// res.status(201).json({ message: "ok", transaction, calculateTransaction });
 	} catch (error) {
 		next(error);
 	}
