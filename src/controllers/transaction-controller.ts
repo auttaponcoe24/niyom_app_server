@@ -35,7 +35,7 @@ export const createTransaction = async (
 			price: 0,
 			over_due: 0,
 			total_price: 0,
-		};
+		} as any;
 
 		if (transaction.type === "W") {
 			resultCal.price =
@@ -50,44 +50,54 @@ export const createTransaction = async (
 			resultCal.price = a + b;
 		}
 
-		// find ยอดค้าง
-		let findOverDue;
-		if (month === 1) {
-			findOverDue = await prisma.transaction.findFirst({
-				where: {
-					AND: [
-						{
-							month: "12",
-							year: String(year - 1),
-						},
-					],
-				},
-			});
-		} else {
-			findOverDue = await prisma.transaction.findFirst({
-				where: {
-					AND: [
-						{
-							month: String(month - 1),
-							year: year,
-						},
-					],
-				},
-			});
-			console.log("findOverDuey", findOverDue);
+		// Find over_due from previous month
+		let previousMonth = String(Number(month) - 1);
+		let previousYear = year;
+
+		if (Number(month) === 1) {
+			previousMonth = "12";
+			previousYear = String(Number(year) - 1);
+		} else if (previousMonth.length === 1) {
+			previousMonth = "0" + previousMonth; // Add leading zero for single digit months
 		}
-		console.log("findOverDue", findOverDue);
 
-		// const calculateTransaction = await prisma.calculateTransaction.create({
-		// 	data: {
-		// 		price: resultCal.price,
-		// 		total_price: resultCal.total_price,
-		// 		over_due: resultCal.over_due,
-		// 		transactionId: transaction.id,
-		// 	},
-		// });
+		const overDueTransaction = await prisma.transaction.findFirst({
+			where: {
+				month: previousMonth,
+				year: previousYear,
+				customerId: customerId,
+			},
+			select: {
+				CalculateTransactions: true,
+			},
+			orderBy: {
+				updateAt: "desc",
+			},
+		});
 
-		// res.status(201).json({ message: "ok", transaction, calculateTransaction });
+		// console.log("overDueTransaction", overDueTransaction);
+
+		// Set over_due value if found
+		if (overDueTransaction && overDueTransaction.CalculateTransactions) {
+			resultCal.over_due =
+				overDueTransaction.CalculateTransactions[0].total_price;
+		}
+
+		// Calculate total price
+		resultCal.total_price =
+			Number(resultCal.price) + Number(resultCal.over_due);
+
+		// Create the calculateTransaction
+		const calculateTransaction = await prisma.calculateTransaction.create({
+			data: {
+				price: resultCal.price,
+				over_due: resultCal.over_due,
+				total_price: resultCal.total_price,
+				transactionId: transaction.id,
+			},
+		});
+
+		res.status(201).json({ message: "ok", transaction, calculateTransaction });
 	} catch (error) {
 		next(error);
 	}
@@ -103,6 +113,9 @@ export const getTransaction = async (
 			include: {
 				customer: true,
 				CalculateTransactions: true,
+			},
+			orderBy: {
+				createAt: "desc",
 			},
 		});
 

@@ -2,8 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../models/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema } from "@/validators/auth-validator";
-import { IUser } from "@/interfaces/user-interface";
+import { loginSchema } from "@/validators/auth-validator";
 import createError from "@/utils/create-error";
 import Joi from "joi";
 
@@ -13,21 +12,19 @@ export const register = async (
 	next: NextFunction
 ) => {
 	try {
-		const { value, error }: { value: IUser; error: any } =
-			registerSchema.validate(req.body);
-
-		if (error) {
-			error.statusCode = 401;
-			return next(error);
-		}
+		const { email, password } = req.body;
 
 		// Hash the password
-		value.password = await bcrypt.hash(value.password, 12);
+		const hashPassword = await bcrypt.hash(password, 12);
 
 		// Create the user in the database
 		const data = await prisma.user.create({
-			data: value,
+			data: {
+				email: email,
+				password: hashPassword,
+			},
 		});
+
 		const payload = {
 			id: data.id,
 			id_passpost: data.id_passpost,

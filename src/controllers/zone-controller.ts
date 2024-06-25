@@ -14,8 +14,8 @@ export const createZone = async (
 		const values: TZone = req.body;
 		// const { zone_name } = req.body;
 
-		if (role !== "OWNER") {
-			return next(createError("Is Not Owner", 401));
+		if (role !== "ADMIN") {
+			return next(createError("not admin", 401));
 		}
 
 		const result = await prisma.zone.create({
@@ -36,8 +36,8 @@ export const getZone = async (
 	try {
 		const { role } = req.user;
 
-		if (role !== "OWNER") {
-			return next(createError("Is not owner", 201));
+		if (role !== "ADMIN") {
+			return next(createError("not admin", 201));
 		}
 
 		const result = await prisma.zone.findMany();

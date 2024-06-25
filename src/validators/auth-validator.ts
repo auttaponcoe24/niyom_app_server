@@ -1,10 +1,12 @@
 import Joi from "joi";
 
 export const registerSchema = Joi.object({
-	firstname: Joi.string().trim().required(),
-	lastname: Joi.string().trim().required(),
-	address: Joi.string().trim().required(),
-	id_passpost: Joi.string().trim().required(),
+	firstname: Joi.string().trim(),
+	lastname: Joi.string().trim(),
+	address: Joi.string().trim(),
+	id_passpost: Joi.string()
+		.trim()
+		.pattern(/^[0-9]{13}/),
 	email: Joi.string().email().required(),
 	password: Joi.string()
 		.pattern(/^[a-zA-Z0-9.-@]{6,30}$/)
@@ -19,21 +21,6 @@ export const registerSchema = Joi.object({
 		.strip(),
 	role: Joi.string().optional(),
 	status: Joi.string().optional(),
-
-	// emailOrUsername: Joi.alternatives([
-	// 	Joi.string().pattern(
-	// 		/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{3,15}$/
-	// 	),
-	// 	Joi.string().pattern(/^[a-zA-Z0-9]{3,15}$/),
-	// ])
-	// 	.required()
-	// 	.strip(),
-
-	// confirmPassword: Joi.string()
-	// 	.valid(Joi.ref("password"))
-	// 	.trim()
-	// 	.required()
-	// 	.strip(),
 });
 
 export const loginSchema = Joi.object({

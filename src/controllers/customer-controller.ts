@@ -11,8 +11,8 @@ export const createCustomer = async (
 	try {
 		const { role } = req.user;
 
-		if (role !== "OWNER") {
-			return next(createError("Is not Owner", 401));
+		if (role !== "ADMIN") {
+			return next(createError("not admin", 401));
 		}
 
 		const values: ICustomer = req.body;
@@ -35,8 +35,8 @@ export const getAllCustomer = async (
 	try {
 		const { role } = req.user;
 
-		if (role !== "OWNER") {
-			return next(createError("Is not owner", 200));
+		if (role !== "ADMIN") {
+			return next(createError("not admin", 200));
 		}
 
 		const result = await prisma.customer.findMany({
@@ -69,8 +69,8 @@ export const editCustomer = async (
 			zoneId,
 		} = req.body;
 
-		if (role !== "OWNER") {
-			return next(createError("Is not owner", 401));
+		if (role !== "ADMIN") {
+			return next(createError("not admin", 401));
 		}
 
 		const findCustomer = await prisma.customer.findUnique({
