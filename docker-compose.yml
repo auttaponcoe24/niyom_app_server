@@ -1,18 +1,46 @@
-version: '3.9'
+# version: '3.9'
+# services:
+#   mysql:
+#     container_name: mysql
+#     restart: always
+#     image: mysql:8.0
+#     ports:
+#       - '3307:3306'
+#     environment:
+#       - MYSQL_ROOT_PASSWORD=P@ssw0rd
+#       - MYSQL_USER=auttapon
+#       - MYSQL_PASSWORD=P@ssw0rd
+#       - MYSQL_DATABASE=niyom_app
+#     networks:
+#       - network-connect
+# networks:
+#   network-connect:
+#     name: join-network
+version: '3.8'
+
 services:
+  app:
+    container_name: app
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql://auttapon:password@mysql:3306/mydb_niyom
+    depends_on:
+      - mysql
+
   mysql:
     container_name: mysql
-    restart: always
-    image: mysql:8.0
+    image: mysql
     ports:
-      - '3307:3306'
+      - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=P@ssw0rd
-      - MYSQL_USER=auttapon
-      - MYSQL_PASSWORD=P@ssw0rd
-      - MYSQL_DATABASE=niyom_app
-    networks:
-      - network-connect
-networks:
-  network-connect:
-    name: join-network
+      MYSQL_ROOT_PASSWORD: P@ssw0rd
+      MYSQL_DATABASE: mydb_niyom
+      MYSQL_USER: auttapon
+      MYSQL_PASSWORD: P@ssw0rd
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:

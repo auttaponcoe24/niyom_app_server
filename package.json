@@ -1,10 +1,10 @@
 {
-	"name": "niyom_app_backent",
+	"name": "niyom_app_backend",
 	"version": "1.0.0",
 	"main": "index.js",
 	"license": "MIT",
 	"scripts": {
-		"start": "npm run build && cross-env NODE_ENV=production node dist/server.js",
+		"start": "yarn run build && cross-env NODE_ENV=production node dist/server.js",
 		"dev": "nodemon",
 		"build": "swc src -d dist --source-maps --copy-files",
 		"build:tsc": "tsc && tsc-alias",
@@ -44,6 +44,7 @@
 		"@types/jsonwebtoken": "^9.0.6",
 		"@types/morgan": "^1.9.9",
 		"@types/node": "^20.12.13",
+		"cross-env": "^7.0.3",
 		"nodemon": "^3.1.2",
 		"prisma": "^5.15.1",
 		"ts-node": "^10.9.2",
