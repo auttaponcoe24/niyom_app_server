@@ -20,7 +20,7 @@ app.use(morgan('dev'));
 
 app.use(express.json());
 
-app.get('/', async (req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
   const test: string = 'Hello world';
   res.json({ message: test });
 });
