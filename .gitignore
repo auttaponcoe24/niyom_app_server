@@ -111,6 +111,8 @@ erl_crash.dump
 .elixir_ls/
 
 .env
+.env.develop
+.env.production
 
 # Generated lexer
 /src/source_lexer.erl

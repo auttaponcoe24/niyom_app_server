@@ -17,10 +17,11 @@ function _interop_require_default(obj) {
     };
 }
 const router = (0, _express.Router)();
-router.post("/sign-up", _authcontroller.register);
-router.post("/sign-in", _authcontroller.login);
-router.get("/profile", _authenticate.default, _authcontroller.getProfile);
-router.patch("/editProfile", _authenticate.default, _authcontroller.editProfile);
+router.post('/sign-up', _authcontroller.register);
+router.post('/sign-in', _authcontroller.login);
+router.get('/profile', _authenticate.default, _authcontroller.getProfile);
+router.patch('/editProfile', _authenticate.default, _authcontroller.editProfile);
+router.patch('/update-access', _authenticate.default, _authcontroller.updateAccess);
 const _default = router;
 
 //# sourceMappingURL=auth-route.js.map

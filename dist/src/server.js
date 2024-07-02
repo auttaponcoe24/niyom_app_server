@@ -20,21 +20,21 @@ function _interop_require_default(obj) {
 _dotenv.default.config();
 const app = (0, _express.default)();
 app.use((0, _cors.default)());
-app.use((0, _morgan.default)("dev"));
+app.use((0, _morgan.default)('dev'));
 app.use(_express.default.json());
-app.get("/", async (req, res)=>{
-    const test = "Hello world";
+app.get('/', (req, res)=>{
+    const test = 'Hello world';
     res.json({
         message: test
     });
 });
-app.use("/auth", _authroute.default);
-app.use("/customer", _customerroute.default);
-app.use("/zone", _zoneroute.default);
-app.use("/transaction", _transactionroute.default);
+app.use('/auth', _authroute.default);
+app.use('/customer', _customerroute.default);
+app.use('/zone', _zoneroute.default);
+app.use('/transaction', _transactionroute.default);
 app.use(_notfound.default);
 app.use(_error.default);
-const PORT = process.env.PORT || "8801";
+const PORT = process.env.PORT || '8800';
 app.listen(PORT, ()=>console.log(`Server is run on PORT: ${PORT}`));
 
 //# sourceMappingURL=server.js.map

@@ -20,6 +20,9 @@ _export(exports, {
     },
     register: function() {
         return register;
+    },
+    updateAccess: function() {
+        return updateAccess;
     }
 });
 const _prisma = _interop_require_default(require("../models/prisma"));
@@ -49,12 +52,12 @@ const register = async (req, res, next)=>{
             lastname: data.lastname,
             role: data.role
         };
-        const accessToken = _jsonwebtoken.default.sign(payload, process.env.JWT_SECREY_KEY || "secretKeyRandom", {
-            expiresIn: process.env.JWT_EXPIRES_IN || "30d"
+        const accessToken = _jsonwebtoken.default.sign(payload, process.env.JWT_SECREY_KEY || 'secretKeyRandom', {
+            expiresIn: process.env.JWT_EXPIRES_IN || '30d'
         });
         delete data.password;
         res.status(201).json({
-            message: "ok",
+            message: 'ok',
             user: data,
             accessToken: accessToken
         });
@@ -66,7 +69,7 @@ const login = async (req, res, next)=>{
     try {
         const { value, error } = _authvalidator.loginSchema.validate(req.body);
         if (error) {
-            return next((0, _createerror.default)("email incorrect or password incorrect", 400));
+            return next((0, _createerror.default)('email incorrect or password incorrect', 400));
         }
         const user = await _prisma.default.user.findUnique({
             where: {
@@ -74,11 +77,11 @@ const login = async (req, res, next)=>{
             }
         });
         if (!user) {
-            return next((0, _createerror.default)("mail is not found", 400));
+            return next((0, _createerror.default)('mail is not found', 400));
         }
         const isMatch = await _bcryptjs.default.compare(value.password, user.password);
         if (!isMatch) {
-            return next((0, _createerror.default)("password incorrect", 400));
+            return next((0, _createerror.default)('password incorrect', 400));
         }
         const payload = {
             id: user.id,
@@ -87,12 +90,12 @@ const login = async (req, res, next)=>{
             lastname: user.lastname,
             role: user.role
         };
-        const accessToken = _jsonwebtoken.default.sign(payload, process.env.JWT_SECRET_KEY || "secretKeyRandom", {
-            expiresIn: process.env.JWT_EXPIRES_IN || "30d"
+        const accessToken = _jsonwebtoken.default.sign(payload, process.env.JWT_SECRET_KEY || 'secretKeyRandom', {
+            expiresIn: process.env.JWT_EXPIRES_IN || '30d'
         });
         delete user.password;
         res.status(200).json({
-            message: "ok",
+            message: 'ok',
             user: user,
             accessToken: accessToken
         });
@@ -103,7 +106,7 @@ const login = async (req, res, next)=>{
 const getProfile = async (req, res, next)=>{
     try {
         res.status(200).json({
-            message: "ok",
+            message: 'ok',
             user: req.user
         });
     } catch (error) {
@@ -126,9 +129,54 @@ const editProfile = async (req, res, next)=>{
             }
         });
         res.status(201).json({
-            message: "ok",
+            message: 'ok',
             result: findUser
         });
+    } catch (error) {
+        next(error);
+    }
+};
+const updateAccess = async (req, res, next)=>{
+    try {
+        const { role } = req.user;
+        const { id, update } = req.query;
+        if (role !== 'ADMIN') {
+            return next((0, _createerror.default)('is not admin', 401));
+        }
+        const findUser = await _prisma.default.user.findUnique({
+            where: {
+                id: id
+            }
+        });
+        if (update === 'SUCCESS') {
+            const result = await _prisma.default.user.update({
+                where: {
+                    id: findUser.id
+                },
+                data: {
+                    status: 'SUCCESS'
+                }
+            });
+            res.status(201).json({
+                message: 'ok',
+                result
+            });
+        } else if (update === 'REJECT') {
+            const result = await _prisma.default.user.update({
+                where: {
+                    id: findUser.id
+                },
+                data: {
+                    status: 'REJECT'
+                }
+            });
+            res.status(201).json({
+                message: 'ok',
+                result
+            });
+        } else {
+            return next((0, _createerror.default)('update is missing', 401));
+        }
     } catch (error) {
         next(error);
     }

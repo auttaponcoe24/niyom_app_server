@@ -33,5 +33,5 @@ app.use('/transaction', transactionRoute);
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
 
-const PORT = '8800';
+const PORT = process.env.PORT || '8800';
 app.listen(PORT, () => console.log(`Server is run on PORT: ${PORT}`));
