@@ -14,18 +14,17 @@
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
-    "module": "CommonJS",
+    "module": "commonjs",
     "pretty": true,
     "sourceMap": true,
     "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "outDir": "dist",
     "allowJs": true,
     "noEmit": false,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "importHelpers": true,
-    "baseUrl": "./src",
+    "baseUrl": "src",
     "paths": {
       "@/*": [
         "./*"
@@ -41,9 +40,6 @@
       ],
       "@/routes/*": [
         "routes/*"
-      ],
-      "@/validators/*": [
-        "validators/*"
       ],
       "@/utils/*": [
         "utils/*"

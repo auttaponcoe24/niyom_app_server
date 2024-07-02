@@ -35,9 +35,6 @@
       "@/routes/*": [
         "routes/*"
       ],
-      "@/validators/*": [
-        "validators/*"
-      ],
       "@/utils/*": [
         "utils/*"
       ]
