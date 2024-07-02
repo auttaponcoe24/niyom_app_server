@@ -116,3 +116,5 @@ erl_crash.dump
 
 # Generated lexer
 /src/source_lexer.erl
+
+# public/
