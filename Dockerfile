@@ -1,39 +1,26 @@
-# ใช้ base image ที่มี Node.js เวอร์ชั่นที่ต้องการ
-# FROM node:18
+# Common build stage
+FROM node:18-slim as common-build-stage
 
-# ตั้งค่าตัวแปรสภาพแวดล้อม
-# ENV NODE_ENV=production
-
-# สร้าง directory สำหรับโปรเจกต์
-# WORKDIR /app
-
-# คัดลอกไฟล์ package.json และ package-lock.json (ถ้ามี) ไปยัง container
-# COPY package*.json ./
-
-# ติดตั้ง dependencies
-# RUN yarn install
-
-# คัดลอกไฟล์โปรเจกต์ทั้งหมดไปยัง container
-# COPY . .
-
-# ระบุ port ที่แอปพลิเคชันจะใช้
-# EXPOSE 3000
-
-# คำสั่งเริ่มต้นในการรันแอปพลิเคชัน
-# CMD ["node", "app.js"]
-
-FROM node:18
+COPY . ./app
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN yarn set version berry
 
 RUN yarn install
 
-COPY . .
+EXPOSE 8080
 
-EXPOSE 8000
+# Development build stage
+FROM common-build-stage as development-build-stage
+
+ENV NODE_ENV development
+
+CMD ["yarn", "dev"]
+
+# Production build stage
+FROM common-build-stage as production-build-stage
+
+ENV NODE_ENV production
 
 CMD ["yarn", "start"]
-
-

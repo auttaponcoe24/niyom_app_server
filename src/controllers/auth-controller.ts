@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import prisma from '../models/prisma';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import createError from '@/utils/create-error';
 
