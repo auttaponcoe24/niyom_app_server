@@ -43,6 +43,9 @@
       ],
       "@/utils/*": [
         "utils/*"
+      ],
+      "@/validators": [
+        "validators/*"
       ]
     }
   },

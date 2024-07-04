@@ -8,10 +8,10 @@ import errorMiddlewares from '@/middlewares/error';
 import notFoundMiddlewares from '@/middlewares/not-found';
 
 // Routes
-import authRoute from '@/routes/auth-route';
-import customerRoute from '@/routes/customer-route';
-import zoneRoute from '@/routes/zone-route';
-import transactionRoute from '@/routes/transaction-route';
+import authRoute from '@/routes/auth.route';
+import customerRoute from '@/routes/customer.route';
+import zoneRoute from '@/routes/zone.route';
+import transactionRoute from '@/routes/transaction.route';
 
 dotenv.config();
 const app = express();

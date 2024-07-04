@@ -3,18 +3,38 @@ import prisma from '../models/prisma';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import createError from '@/utils/create-error';
+import { editProfileSchema, loginSchema, registerSchema } from '@/validators/auth.validator';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
+    // รับข้อมูลจากฟอร์มการลงทะเบียน
+    const { firstname, lastname, id_passport, address, email, password, confirmPassword, role, status } = req.body;
+
+    // ตรวจสอบข้อมูลด้วย Joi
+    const { error, value } = registerSchema.validate({
+      firstname,
+      lastname,
+      id_passport,
+      address,
+      email,
+      password,
+      confirmPassword,
+      role,
+      status,
+    });
+
+    if (error) {
+      // หากข้อมูลไม่ถูกต้อง ส่ง error กลับไปยัง client
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
     // Hash the password
-    const hashPassword = await bcrypt.hash(password, 12);
+    const hashPassword = await bcrypt.hash(value.password, 12);
 
     // Create the user in the database
     const data = await prisma.user.create({
       data: {
-        email: email,
+        ...value,
         password: hashPassword,
       },
     });
@@ -45,19 +65,26 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   try {
     const { email, password } = req.body;
 
+    // ตรวจสอบข้อมูลด้วย Joi
+    const { error, value } = loginSchema.validate({ email, password });
+
+    if (error) {
+      return next(createError(error.details[0].message as string, 400));
+    }
+
     const user = await prisma.user.findUnique({
       where: {
-        email,
+        email: value.email,
       },
     });
 
     if (!user) {
-      return next(createError('mail is not found', 400));
+      return next(createError('Invalid email or password', 400));
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(value.password, user.password);
     if (!isMatch) {
-      return next(createError('password incorrect', 400));
+      return next(createError('Invalid email or password', 401));
     }
 
     const payload = {
@@ -93,21 +120,43 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 export const editProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user;
-    const { firstname, lastname, id_passpost, address } = req.body;
+    const { firstname, lastname, id_passpost, address, role, status } = req.body;
+
+    const { error, value } = editProfileSchema.validate({ firstname, lastname, id_passpost, address, role, status });
+
+    if (error) {
+      return next(createError(error.details[0].message as string, 400));
+    }
 
     const findUser = await prisma.user.update({
       where: {
         id: id,
       },
       data: {
-        firstname,
-        lastname,
-        id_passpost,
-        address,
+        firstname: value.firstname,
+        lastname: value.lastname,
+        id_passpost: value.id_passpost,
+        address: value.address,
+        role: value.role,
+        status: value.status,
       },
     });
 
     res.status(201).json({ message: 'ok', result: findUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await prisma.user.findMany({
+      where: {
+        role: 'USER',
+      },
+    });
+
+    res.status(200).json({ message: 'ok', data: result, total_record: result.length });
   } catch (error) {
     next(error);
   }
