@@ -5,7 +5,7 @@ import { NextFunction, Response, Request } from 'express';
 
 export const createZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user;
+    const { role } = req.user.user;
 
     const values: TZone = req.body;
     // const { zone_name } = req.body;
@@ -26,7 +26,7 @@ export const createZone = async (req: Request, res: Response, next: NextFunction
 
 export const getZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user;
+    const { role } = req.user.user;
 
     if (role !== 'ADMIN') {
       return next(createError('not admin', 201));

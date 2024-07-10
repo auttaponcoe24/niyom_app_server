@@ -5,7 +5,7 @@ import { NextFunction, Request, Response } from 'express';
 
 export const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user;
+    const { role } = req.user.user;
 
     if (role !== 'ADMIN') {
       return next(createError('not admin', 401));
@@ -25,7 +25,7 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const getAllCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user;
+    const { role } = req.user.user;
 
     if (role !== 'ADMIN') {
       return next(createError('not admin', 200));
@@ -45,7 +45,7 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const editCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user;
+    const { role } = req.user.user;
     const { customerId } = req.query;
     const { id_passpost, firstname, lastname, phone_number, house_number, address, zoneId } = req.body;
 

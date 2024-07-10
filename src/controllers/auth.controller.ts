@@ -119,7 +119,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 
 export const editProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.user;
+    const { id } = req.user.user;
     const { firstname, lastname, id_passpost, address, role, status } = req.body;
 
     const { error, value } = editProfileSchema.validate({ firstname, lastname, id_passpost, address, role, status });
