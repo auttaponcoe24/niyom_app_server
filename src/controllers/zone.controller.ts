@@ -73,14 +73,24 @@ export const updateZone = async (req: Request, res: Response, next: NextFunction
 export const getAllZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role } = req.user.result;
+    const { start, page_size, keywords } = req.query;
 
     if (role !== 'ADMIN') {
       return next(createError('not admin', 201));
     }
+    const result = await prisma.zone.findMany({
+      skip: (Number(start) - 1) * Number(page_size),
+      take: Number(page_size),
+      where: {
+        zone_name: {
+          contains: String(keywords),
+        },
+      },
+    });
 
-    const result = await prisma.zone.findMany();
+    const total_record = await prisma.zone.findMany();
 
-    res.status(200).json({ message: 'ok', result, total_record: result.length });
+    res.status(200).json({ message: 'ok', result, total_record: total_record.length });
   } catch (error) {
     next(error);
   }
