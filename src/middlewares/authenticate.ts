@@ -5,9 +5,7 @@ import createError from '@/utils/create-error';
 
 interface IPayload extends JwtPayload {
   id: string;
-  id_passpost: string;
-  firstname: string;
-  lastname: string;
+  email: string;
   role: 'OWNER' | 'CUSTOMER';
 }
 
@@ -15,14 +13,12 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
   try {
     const authorization = req.headers.authorization;
     if (!authorization) {
-      return next(createError('unauthenticated', 401));
+      return next(createError('unauthenticated', 400));
     }
 
     const token = authorization.split(' ')[1];
 
     const payload = jwt.verify(token, process.env.JWT_SECRET_KEY || 'secretKeyRandom') as IPayload;
-
-    // const { id_passpost } = payload;
 
     const user = await prisma.user.findUnique({
       where: {
@@ -31,12 +27,12 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
     });
 
     if (!user) {
-      return next(createError('unauthenticated', 401));
+      return next(createError('unauthenticated', 400));
     }
 
     delete user.password;
 
-    req.user = { user, accessToken: token };
+    req.user = { result: user, token };
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError' || 'JsonWebTokenError') {
