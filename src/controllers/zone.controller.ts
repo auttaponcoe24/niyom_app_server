@@ -5,7 +5,7 @@ import { NextFunction, Response, Request } from 'express';
 
 export const createZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.user;
+    const { role } = req.user.result;
 
     const values: TZone = req.body;
     // const { zone_name } = req.body;
@@ -18,23 +18,93 @@ export const createZone = async (req: Request, res: Response, next: NextFunction
       data: values,
     });
 
-    res.status(201).json({ message: 'ok', zone: result });
+    res.status(201).json({ message: 'ok', result });
   } catch (error) {
     next(error);
   }
 };
 
-export const getZone = async (req: Request, res: Response, next: NextFunction) => {
+export const getByIdZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.user;
+    const { role } = req.user.result;
+    const { id } = req.query;
+
+    if (role !== 'ADMIN') {
+      return next(createError('User is not ADMIN', 400));
+    }
+    const result = await prisma.zone.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+
+    res.status(200).json({ message: 'Get zone by id is successfully', result });
+  } catch (error) {
+    console.error('Get zone by id is failed', 400);
+    return next(error);
+  }
+};
+
+export const updateZone = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user.result;
+
+    const { id, name } = req.body;
+
+    if (role !== 'ADMIN') {
+      return next(createError('not admin', 401));
+    }
+
+    const result = await prisma.zone.update({
+      where: {
+        id: id,
+      },
+      data: {
+        zone_name: name,
+      },
+    });
+
+    res.status(201).json({ message: 'Update zone successfully', result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllZone = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user.result;
 
     if (role !== 'ADMIN') {
       return next(createError('not admin', 201));
     }
 
     const result = await prisma.zone.findMany();
-    res.status(200).json({ message: 'ok', result });
+
+    res.status(200).json({ message: 'ok', result, total_record: result.length });
   } catch (error) {
     next(error);
+  }
+};
+
+export const deleteZone = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user.result;
+
+    const { id } = req.body;
+
+    if (role !== 'ADMIN') {
+      return next(createError('not admin', 401));
+    }
+
+    const result = await prisma.zone.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    res.status(201).json({ message: 'Delete zone successfully', result });
+  } catch (error) {
+    console.error('Delete zone failed', 401);
+    return next(error);
   }
 };
