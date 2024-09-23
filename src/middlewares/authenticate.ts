@@ -6,7 +6,7 @@ import createError from '@/utils/create-error';
 interface IPayload extends JwtPayload {
   id: string;
   email: string;
-  role: 'OWNER' | 'CUSTOMER';
+  role: 'ADMIN' | 'USER';
 }
 
 const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +38,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
     if (error.name === 'TokenExpiredError' || 'JsonWebTokenError') {
       error.statusCode = 401;
     }
-    next(error);
+    return next(error);
   }
 };
 

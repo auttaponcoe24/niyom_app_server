@@ -1,16 +1,11 @@
 import Joi from 'joi';
 
 export const registerSchema = Joi.object({
-  // firstname: Joi.string().optional().allow(null, ''),
-  // lastname: Joi.string().optional().allow(null, ''),
-  // id_passpost: Joi.string()
-  //   .optional()
-  //   .allow(null, '')
-  //   .regex(/^[a-zA-Z0-9]{5,15}$/)
-  //   .messages({
-  //     'string.pattern.base': 'Passport ID must be alphanumeric and between 5 to 15 characters',
-  //   }),
-  // address: Joi.string().optional().allow(null, ''),
+  firstname: Joi.string().required(),
+  lastname: Joi.string().optional().allow(null, ''),
+  card_id: Joi.string().required().length(13).messages({
+    'string.length': 'Card ID must be exactly 13 characters long',
+  }),
   email: Joi.string()
     .email({ tlds: { allow: false } })
     .required()
@@ -28,8 +23,6 @@ export const registerSchema = Joi.object({
       'string.empty': 'Confirm password is required',
     })
     .strip(),
-  // role: Joi.string().valid('USER', 'ADMIN').default('USER'),
-  // status: Joi.string().valid('PENDING', 'REJECT', 'SUCCESS').default('PENDING'),
 });
 
 export const loginSchema = Joi.object({
@@ -46,17 +39,9 @@ export const loginSchema = Joi.object({
   }),
 });
 
-export const editProfileSchema = Joi.object({
-  firstname: Joi.string().optional().allow(null, ''),
+// firstname, lastname, card_id
+export const updateProfileSchema = Joi.object({
+  firstname: Joi.string().required(),
   lastname: Joi.string().optional().allow(null, ''),
-  id_passpost: Joi.string()
-    .optional()
-    .allow(null, '')
-    .regex(/^[a-zA-Z0-9]{5,15}$/)
-    .messages({
-      'string.pattern.base': 'Passport ID must be alphanumeric and between 5 to 15 characters',
-    }),
-  address: Joi.string().optional().allow(null, ''),
-  role: Joi.string().valid('USER', 'ADMIN').default('USER'),
-  status: Joi.string().valid('PENDING', 'REJECT', 'SUCCESS').default('PENDING'),
+  card_id: Joi.string().length(13).required(),
 });

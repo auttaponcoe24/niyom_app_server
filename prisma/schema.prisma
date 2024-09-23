@@ -7,98 +7,137 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String      @id @default(uuid())
-  firstname   String?
-  lastname    String?
-  id_passpost String?     @unique
-  address     String?
-  email       String      @unique
-  password    String
-  role        role_enum   @default(USER)
-  status      status_enum @default(PENDING)
-  createAt    DateTime    @default(now())
-  updateAt    DateTime    @updatedAt
-  Payments    Payment[]
-}
-
-model Customer {
-  id           Int           @id @default(autoincrement())
-  id_passpost  String?       @unique
-  firstname    String?
-  lastname     String?
-  phone_number String?       @unique
-  house_number String?
-  address      String?
-  createAt     DateTime      @default(now())
-  updateAt     DateTime      @updatedAt
-  zoneId       Int?
-  zone         Zone?         @relation(fields: [zoneId], references: [id])
-  Transactions Transaction[]
+model Prefix {
+  id          Int        @id @default(autoincrement())
+  prefix_name String
+  Customers   Customer[]
+  createAt    DateTime   @default(now())
+  updateAt    DateTime   @updatedAt
 }
 
 model Zone {
   id           Int           @id @default(autoincrement())
   zone_name    String?       @unique
-  Customers    Customer[]
+  customers    Customer[]
+  createAt     DateTime      @default(now())
+  updateAt     DateTime      @updatedAt
   Transactions Transaction[]
+}
+
+model User {
+  id         String    @id @default(uuid())
+  firstname  String
+  lastname   String?
+  card_id    String    @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  email      String?   @unique
+  password   String
+  role       RoleUser  @default(USER)
+  customerId String?   @unique
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  payments   Payment[]
+  createAt   DateTime  @default(now())
+  updateAt   DateTime  @updatedAt
+}
+
+model Customer {
+  id           String        @id @default(uuid())
+  firstname    String
+  lastname     String?
+  card_id      String        @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  phone        String?
+  house_number String?
+  address      String?
+  status       StatueUser    @default(PENDING)
+  prefixId     Int?
+  prefix       Prefix?       @relation(fields: [prefixId], references: [id])
+  zoneId       Int?
+  zone         Zone?         @relation(fields: [zoneId], references: [id])
+  units        Unit[]
+  transactions Transaction[]
+  createAt     DateTime      @default(now())
+  updateAt     DateTime      @updatedAt
+  user         User? // One-to-One relation with User
+}
+
+model Unit {
+  id          Int             @id @default(autoincrement())
+  month       String
+  year        String
+  type        TypeTransaction @default(W)
+  unit_number Int?
+  customerId  String
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  createAt    DateTime        @default(now())
+  updateAt    DateTime?       @updatedAt
+
+  // ความสัมพันธ์แบบ one-to-one กับ Transaction
+  oldTransactions Transaction[] @relation("UnitOld")
+  newTransactions Transaction[] @relation("UnitNew")
 }
 
 model Transaction {
-  id                    Int                    @id @default(autoincrement())
-  month                 String?
-  year                  String?
-  unit_old_date         Int?
-  unit_new_date         Int?
-  type                  type_transaction       @default(W)
-  createAt              DateTime               @default(now())
-  updateAt              DateTime               @updatedAt
-  zoneId                Int?
-  zone                  Zone?                  @relation(fields: [zoneId], references: [id])
-  paymentId             Int?
-  payment               Payment?               @relation(fields: [paymentId], references: [id])
-  customerId            Int?
-  customer              Customer?              @relation(fields: [customerId], references: [id])
-  CalculateTransactions CalculateTransaction[]
-}
+  id    Int             @id @default(autoincrement())
+  month String?
+  year  String?
+  type  TypeTransaction @default(W)
 
-model CalculateTransaction {
-  id            Int         @id @default(autoincrement())
-  price         Decimal?    @db.Decimal(10, 2)
-  over_due      Decimal?    @db.Decimal(10, 2)
-  total_price   Decimal?    @db.Decimal(10, 2)
-  transactionId Int
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  // ความสัมพันธ์แบบ one-to-one กับ Unit
+  unit_old    Unit? @relation("UnitOld", fields: [unit_old_id], references: [id])
+  unit_old_id Int?
+
+  unit_new    Unit? @relation("UnitNew", fields: [unit_new_id], references: [id])
+  unit_new_id Int?
+
+  unit_used   Int? // หน่วยน้ำที่ใช้
+  amount      Int? // จำนวนค่าน้ำที่คิดจากหน่วย
+  over_due    Int?
+  total_price Int?
+  status      BillStatus @default(PENDING)
+  zoneId      Int?
+  zone        Zone?      @relation(fields: [zoneId], references: [id])
+  customerId  String?
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  payments    Payment[]
+  createAt    DateTime   @default(now())
+  updateAt    DateTime   @updatedAt
 }
 
 model Payment {
-  id           Int            @id @default(autoincrement())
-  slip_payment String?
-  status       status_payment @default(PENDING)
-  createAt     DateTime       @default(now())
-  updateAt     DateTime       @updatedAt
-  userId       String?
-  user         User?          @relation(fields: [userId], references: [id])
-  Transactions Transaction[]
+  id            Int         @id @default(autoincrement())
+  slipPayment   String?
+  amount        Int // จำนวนเงินที่ชำระ
+  paymentDate   DateTime // วันที่ชำระ
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId Int
+  user          User?       @relation(fields: [userId], references: [id])
+  userId        String?
+  createAt      DateTime    @default(now())
+  updateAt      DateTime    @updatedAt
 }
 
-enum role_enum {
+enum BillStatus {
+  PAID
+  PENDING
+  OVERDUE
+}
+
+enum RoleUser {
   ADMIN
   USER
 }
 
-enum status_enum {
+enum StatueUser {
   PENDING
   REJECT
   SUCCESS
 }
 
-enum type_transaction {
+enum TypeTransaction {
   W
   E
 }
 
-enum status_payment {
+enum StatusPayment {
   PENDING
   REJECT
   SUCCESS

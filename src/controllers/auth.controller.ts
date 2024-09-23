@@ -3,32 +3,47 @@ import prisma from '../models/prisma';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import createError from '@/utils/create-error';
-import { editProfileSchema, loginSchema, registerSchema } from '@/validators/auth.validator';
+import { loginSchema, registerSchema, updateProfileSchema } from '@/validators/auth.validator';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // รับข้อมูลจากฟอร์มการลงทะเบียน
-    const { email, password, confirmPassword } = req.body;
+    const { firstname, lastname, card_id, email, password, confirmPassword } = req.body;
+    const { value, error } = registerSchema.validate({ firstname, lastname, card_id, email, password, confirmPassword });
 
-    if (password !== confirmPassword) {
-      return next(createError('Password does not match Confirm Password', 401));
+    if (error) {
+      return next(createError(error.message, 401));
     }
 
+    // if (password !== confirmPassword) {
+    //   return next(createError('Password does not match Confirm Password', 401));
+    // }
+
+    const customer = await prisma.customer.findUnique({
+      where: {
+        card_id: value.card_id,
+      },
+    });
+
     // Hash the password
-    const hashPassword = await bcrypt.hash(password, 12);
+    const hashPassword = await bcrypt.hash(value.password, 12);
 
     // Create the user in the database
-    const result = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
-        email: email,
+        firstname: value.firstname,
+        lastname: value.lastname,
+        card_id: value.card_id,
+        email: value.email,
         password: hashPassword,
+        customerId: !!customer ? customer.id : null,
       },
     });
 
     // Send a response back to the client
     res.status(201).json({
       message: 'User registered successfully',
-      result: result,
+      result: newUser,
     });
   } catch (error) {
     console.error('Error in registration:', error);
@@ -39,45 +54,52 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
+    const { value, error } = loginSchema.validate({ email, password });
 
-    // Validate email and password
-    if (!email || !password) {
-      return next(createError('Email and password are required', 400));
+    if (error) {
+      return next(createError(error.message, 400));
     }
 
-    const result = await prisma.user.findUnique({
+    // Validate email and password
+    // if (!email || !password) {
+    //   return next(createError('Email and password are required', 400));
+    // }
+
+    const user = await prisma.user.findUnique({
       where: {
-        email: email,
+        email: value.email,
       },
     });
 
-    if (!result) {
+    if (!user) {
       return next(createError('Invalid email or password', 400));
     }
 
-    const isMatch = await bcrypt.compare(password, result.password);
+    const isMatch = await bcrypt.compare(value.password, user.password);
     if (!isMatch) {
       return next(createError('Invalid email or password', 400));
     }
 
     const payload = {
-      id: result.id,
-      email: result.email,
-      role: result.role,
+      id: user.id,
+      email: user.email,
+      role: user.role,
     };
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET_KEY || 'secretKeyRandom', { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
 
-    delete result.password;
+    // delete user.password;
+    // Exclude sensitive fields from user response
+    const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
       message: 'Login successfully',
-      result: result,
+      result: userWithoutPassword,
       token: accessToken,
     });
   } catch (error) {
     console.error('Error during login:', error);
-    next(error);
+    return next(error);
   }
 };
 
@@ -92,68 +114,56 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user.result;
-    const { firstname, lastname, id_passpost, address } = req.body;
+    const { firstname, lastname, card_id } = req.body;
+    const { value, error } = updateProfileSchema.validate({ firstname, lastname, card_id });
 
-    const result = await prisma.user.update({
+    if (error) {
+      return next(createError(error.message, 401));
+    }
+
+    const user = await prisma.user.update({
       where: {
         id: id,
       },
       data: {
-        firstname,
-        lastname,
-        id_passpost,
-        address,
-        status: !!id_passpost ? 'SUCCESS' : 'PENDING',
+        firstname: value.firstname,
+        lastname: value.lastname,
+        card_id: value.card_id,
       },
     });
 
-    res.status(201).json({ message: 'Update profile successfully', result: result });
+    const { password: _, ...userWithOutPassword } = user;
+
+    res.status(201).json({ message: 'Update profile successfully', result: userWithOutPassword });
   } catch (error) {
     console.error('Update Profile Failed:', error);
     next(error);
   }
 };
 
-export const updateStatus = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { role } = req.user.result;
-    const { id, status } = req.query;
-
-    if (role !== 'ADMIN') {
-      return next(createError('User is not ADMIN', 401));
-    }
-
-    const result = await prisma.user.update({
-      where: {
-        id: id as string,
-      },
-      data: {
-        status: status as any,
-      },
-    });
-
-    res.status(201).json({ message: 'Update status successfully', result: result });
-  } catch (error) {
-    console.error('Update status Failed:', error);
-    next(error);
-  }
-};
-
 export const getUserAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req?.user?.result?.role !== 'ADMIN') {
-      return next(createError('User is not ADMIN', 400));
+    const { role } = req.user.result;
+
+    if (role !== 'ADMIN') {
+      return next(createError('User is not ADMIN', 404));
     }
-    const result = await prisma.user.findMany({
+
+    const userAll = await prisma.user.findMany({
       where: {
         role: 'USER',
       },
     });
 
-    res.status(200).json({ message: 'Get users successfully', result: result, total_record: result.length });
+    const total_record = await prisma.user.count({
+      where: {
+        role: 'USER',
+      },
+    });
+
+    res.status(200).json({ message: 'Get users successfully', result: userAll, total_record });
   } catch (error) {
     console.log('Get users failed: ', error);
-
-    next(error);
+    return next(error);
   }
 };

@@ -12,6 +12,8 @@ import authRoute from '@/routes/auth.route';
 import customerRoute from '@/routes/customer.route';
 import zoneRoute from '@/routes/zone.route';
 import transactionRoute from '@/routes/transaction.route';
+import unitRoute from '@/routes/unit.route';
+import prefixRoute from '@/routes/prefix.route';
 
 dotenv.config();
 const app = express();
@@ -25,10 +27,12 @@ app.get('/', async (req: Request, res: Response) => {
   res.json({ message: test });
 });
 
+app.use('/zone', zoneRoute);
+app.use('/prefix', prefixRoute);
 app.use('/auth', authRoute);
 app.use('/customer', customerRoute);
-app.use('/zone', zoneRoute);
 app.use('/transaction', transactionRoute);
+app.use('/unit', unitRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
