@@ -1,5 +1,5 @@
 # Common build stage
-FROM node:18-slim as common-build-stage
+FROM node:20-slim as common-build-stage
 
 COPY . ./app
 
