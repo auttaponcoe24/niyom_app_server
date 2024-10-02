@@ -13,7 +13,7 @@ CREATE TABLE `Zone` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `zone_name` VARCHAR(191) NULL,
     `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updateAt` DATETIME(3) NULL,
+    `updateAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Zone_zone_name_key`(`zone_name`),
     PRIMARY KEY (`id`)
@@ -60,8 +60,8 @@ CREATE TABLE `Customer` (
 -- CreateTable
 CREATE TABLE `Unit` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `month` VARCHAR(191) NULL,
-    `year` VARCHAR(191) NULL,
+    `month` VARCHAR(191) NOT NULL,
+    `year` VARCHAR(191) NOT NULL,
     `type` ENUM('W', 'E') NOT NULL DEFAULT 'W',
     `unit_number` INTEGER NULL,
     `customerId` VARCHAR(191) NOT NULL,
@@ -79,34 +79,31 @@ CREATE TABLE `Transaction` (
     `type` ENUM('W', 'E') NOT NULL DEFAULT 'W',
     `unit_old_id` INTEGER NULL,
     `unit_new_id` INTEGER NULL,
-    `unit_amount` INTEGER NULL,
-    `price` DECIMAL(10, 2) NULL,
-    `over_due` DECIMAL(10, 2) NULL,
-    `total_price` DECIMAL(10, 2) NULL,
-    `remind` DECIMAL(10, 2) NULL,
-    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updateAt` DATETIME(3) NOT NULL,
+    `unit_used` INTEGER NULL,
+    `amount` INTEGER NULL,
+    `over_due` INTEGER NULL,
+    `total_price` INTEGER NULL,
+    `status` ENUM('PAID', 'PENDING', 'OVERDUE') NOT NULL DEFAULT 'PENDING',
     `zoneId` INTEGER NULL,
     `customerId` VARCHAR(191) NULL,
-    `paymentId` INTEGER NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `Transaction_unit_old_id_key`(`unit_old_id`),
-    UNIQUE INDEX `Transaction_unit_new_id_key`(`unit_new_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Payment` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `slip_payment` VARCHAR(191) NULL,
+    `slipPayment` VARCHAR(191) NULL,
     `amount` INTEGER NOT NULL,
+    `paymentDate` DATETIME(3) NOT NULL,
+    `transactionId` INTEGER NOT NULL,
+    `userId` VARCHAR(191) NULL,
     `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updateAt` DATETIME(3) NOT NULL,
-    `userId` VARCHAR(191) NULL,
-    `customerId` VARCHAR(191) NULL,
 
-    UNIQUE INDEX `Payment_userId_key`(`userId`),
-    UNIQUE INDEX `Payment_customerId_key`(`customerId`),
+    UNIQUE INDEX `Payment_transactionId_key`(`transactionId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -135,10 +132,7 @@ ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_zoneId_fkey` FOREIGN KEY (
 ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `Customer`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Transaction` ADD CONSTRAINT `Transaction_paymentId_fkey` FOREIGN KEY (`paymentId`) REFERENCES `Payment`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_transactionId_fkey` FOREIGN KEY (`transactionId`) REFERENCES `Transaction`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_customerId_fkey` FOREIGN KEY (`customerId`) REFERENCES `Customer`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

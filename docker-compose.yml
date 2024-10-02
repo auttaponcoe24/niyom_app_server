@@ -18,9 +18,9 @@ services:
       context: ./
       dockerfile: Dockerfile
     ports:
-      - "3000:8080" # map จาก port Dockerfile
+      - "8080:8000" # map จาก port Dockerfile
     environment:
-      DATABASE_URL: mysql://root:P@ssw0rd@localhost:3307/mydb_niyom
+      DATABASE_URL: mysql://root:P@ssw0rd@localhost:3306/db_niyom
       JWT_SECRET_KEY: "secretKeyRandom"
       JWT_EXPIRES_IN: "30d"
     volumes:
@@ -29,20 +29,20 @@ services:
     # restart: "unless-stopped"
     networks:
       - backend
-    links:
-      - mysql
     depends_on:
-      - mysql
+      - db
 
-  mysql:
+  db:
     container_name: mysql
     image: mysql:8.0
     environment:
-      DATABASE_URL: mysql://root:P@ssw0rd@localhost:3307/mydb_niyom
+      DATABASE_URL: mysql://root:P@ssw0rd@localhost:3306/db_niyom
       MYSQL_ROOT_PASSWORD: P@ssw0rd
-      MYSQL_DATABASE: mydb_niyom
+      MYSQL_DATABASE: db_niyom
+      MYSQL_USER: auttapon
+      POSTGRES_PASSWORD: P@ssw0rd
     ports:
-      - "3307:3306"
+      - "3306:3306"
     networks:
       - backend
 

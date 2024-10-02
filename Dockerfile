@@ -9,7 +9,7 @@ RUN yarn set version berry
 
 RUN yarn install
 
-EXPOSE 8080
+EXPOSE 8000
 
 # Development build stage
 FROM common-build-stage as development-build-stage

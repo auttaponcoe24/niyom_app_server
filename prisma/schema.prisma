@@ -8,11 +8,12 @@ datasource db {
 }
 
 model Prefix {
-  id          Int        @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   prefix_name String
-  Customers   Customer[]
-  createAt    DateTime   @default(now())
-  updateAt    DateTime   @updatedAt
+
+  createAt  DateTime   @default(now())
+  updateAt  DateTime   @updatedAt
+  customers Customer[]
 }
 
 model Zone {
@@ -21,7 +22,7 @@ model Zone {
   customers    Customer[]
   createAt     DateTime      @default(now())
   updateAt     DateTime      @updatedAt
-  Transactions Transaction[]
+  transactions Transaction[]
 }
 
 model User {
@@ -32,8 +33,8 @@ model User {
   email      String?   @unique
   password   String
   role       RoleUser  @default(USER)
-  customerId String?   @unique
   customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @unique
   payments   Payment[]
   createAt   DateTime  @default(now())
   updateAt   DateTime  @updatedAt
@@ -48,8 +49,8 @@ model Customer {
   house_number String?
   address      String?
   status       StatueUser    @default(PENDING)
-  prefixId     Int?
   prefix       Prefix?       @relation(fields: [prefixId], references: [id])
+  prefixId     Int?
   zoneId       Int?
   zone         Zone?         @relation(fields: [zoneId], references: [id])
   units        Unit[]
@@ -65,8 +66,8 @@ model Unit {
   year        String
   type        TypeTransaction @default(W)
   unit_number Int?
-  customerId  String
   customer    Customer        @relation(fields: [customerId], references: [id])
+  customerId  String
   createAt    DateTime        @default(now())
   updateAt    DateTime?       @updatedAt
 
@@ -93,11 +94,11 @@ model Transaction {
   over_due    Int?
   total_price Int?
   status      BillStatus @default(PENDING)
-  zoneId      Int?
   zone        Zone?      @relation(fields: [zoneId], references: [id])
-  customerId  String?
+  zoneId      Int?
   customer    Customer?  @relation(fields: [customerId], references: [id])
-  payments    Payment[]
+  customerId  String?
+  payment     Payment?
   createAt    DateTime   @default(now())
   updateAt    DateTime   @updatedAt
 }
@@ -108,7 +109,7 @@ model Payment {
   amount        Int // จำนวนเงินที่ชำระ
   paymentDate   DateTime // วันที่ชำระ
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-  transactionId Int
+  transactionId Int         @unique
   user          User?       @relation(fields: [userId], references: [id])
   userId        String?
   createAt      DateTime    @default(now())
