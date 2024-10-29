@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title><%= name %></title>
+    <%- include('./styles/reportStyle.ejs'); %>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body id="tbody">
+    <%- include('./headers/theader-report-site', { getCompanyLang, reportName, lang, dateBetween, printed }); %> <% const thNo = {'th': '#', 'en':
+    '#'} const thFirst = {'th': 'ชื่อ', 'en': 'FirstName'} const thLast = {'th': 'นามสกุล', 'en': 'LastName'} const thPosition = {'th': 'ตำแหน่ง',
+    'en': 'Position'} const thTel = {'th': 'เบอร์โทร', 'en': 'Tel'} const thDay = {'th': 'day_short_name', 'en': 'day_short_namee'} const
+    getMsShiftOrigin = JSON.parse(JSON.stringify(getMsShift)) %>
+
+    <br />
+    <table class="table">
+      <thead>
+        <tr>
+          <th rowspan="2"><%= thNo[lang] %></th>
+          <th rowspan="2"><%= thFirst[lang] %></th>
+          <th rowspan="2"><%= thLast[lang] %></th>
+          <th rowspan="2"><%= thPosition[lang] %></th>
+          <th rowspan="2"><%= thTel[lang] %></th>
+          <% getDateDim.forEach(item => { %>
+          <th><%= item[thDay[lang]] %></th>
+          <% }) %>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% getTatDataGroup.forEach((item,index) => { %> <% let filterTatData = getTatData.filter((tatData) => tatData.employee_id ===
+        item.employee_id) let firstNameLang = {'th': 'firstname', 'en': 'firstname_en'} let prefixLang = {'th': 'short_name', 'en': 'short_namee'} let
+        lastNameLang = {'th': 'lastname', 'en': 'lastname_en'} let positionLang = {'th': 'position_name', 'en': 'position_namee'} let objUser =
+        filterTatData[0] let fullname = `${objUser.user.prefix?.[prefixLang[lang]]} ${objUser?.user[firstNameLang[lang]]}` let lastname =
+        `${objUser.user[lastNameLang[lang]]}` // console.log('filterTatData=>', filterTatData); %>
+        <tr>
+          <td><%= ++index %></td>
+          <td class="text-left"><%= fullname %></td>
+          <td class="text-left"><%= lastname %></td>
+          <td><%= objUser.user.position?.[positionLang[lang]] %></td>
+          <td><%= objUser?.user?.phoneNumber %></td>
+          <% getDateDim.forEach((element, day) => { if(!getDateDim[day].hasOwnProperty('sum_shift')){ getDateDim[day].sum_shift =
+          JSON.parse(JSON.stringify(getMsShiftOrigin)) } let getShiftCode = filterTatData.find((tatData) => { const checkInDate = new
+          Date(tatData.checkin_date).setHours(0, 0, 0, 0) const elementDate = new Date(element.date).setHours(0, 0, 0, 0) return checkInDate ===
+          elementDate; }) if(getShiftCode){ let findShiftIndex = getMsShift.findIndex((item) => item.shift_code === getShiftCode?.shift_code)
+          if(findShiftIndex !== -1) { if(!getMsShift[findShiftIndex].hasOwnProperty('sum')){ getMsShift[findShiftIndex].sum = 0 }
+          if(!getDateDim[day].sum_shift[findShiftIndex].hasOwnProperty('sum')){ getDateDim[day].sum_shift[findShiftIndex].sum = 0 }
+          getDateDim[day].sum_shift[findShiftIndex].sum += 1 getMsShift[findShiftIndex].sum += 1 } } %>
+          <td><%= getShiftCode ? getShiftCode.shift_code : '' %></td>
+
+          <% }) %>
+        </tr>
+
+        <% }) %> <% getMsShift.forEach((item,index) => { %>
+        <tr style="background-color: #f2f2f2">
+          <td></td>
+          <td class="text-left" colspan="3">
+            <b><%= `${item.shift_code}: ${item.shift_name}` %></b>
+          </td>
+          <td><%= item.sum %></td>
+          <% getDateDim.forEach((itemDay) => { %>
+          <td><%= itemDay.sum_shift[index]?.sum %></td>
+          <% }) %>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </body>
+</html>

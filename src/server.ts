@@ -14,6 +14,7 @@ import zoneRoute from '@/routes/zone.route';
 import transactionRoute from '@/routes/transaction.route';
 import unitRoute from '@/routes/unit.route';
 import prefixRoute from '@/routes/prefix.route';
+import reportRoute from '@/routes/report.route';
 
 dotenv.config();
 const app = express();
@@ -33,6 +34,7 @@ app.use('/auth', authRoute);
 app.use('/customer', customerRoute);
 app.use('/transaction', transactionRoute);
 app.use('/unit', unitRoute);
+app.use('/report', reportRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
