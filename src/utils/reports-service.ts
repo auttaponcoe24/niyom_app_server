@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 import puppeteer, { PDFOptions } from 'puppeteer';
 import * as XLSX from 'xlsx';
 
-class ReportsService {
+export class ReportsService {
   constructor() {
     this.checkFolderSaveFile();
   }
@@ -29,7 +29,7 @@ class ReportsService {
   }
 
   async handleLoadEjs(ejsFileName: string, reportData: Record<string, unknown>) {
-    const templatePath = path.join(process.cwd(), 'views', ejsFileName);
+    const templatePath = path.join(process.cwd(), 'src/controllers/reports/views/demo', ejsFileName);
     // const templatePath = path.join(
     //   process.cwd(),
     //   'src/modules/api/webs/v1/reports/views/reports',

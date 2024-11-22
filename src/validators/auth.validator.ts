@@ -1,47 +1,27 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const registerSchema = Joi.object({
-  firstname: Joi.string().required(),
-  lastname: Joi.string().optional().allow(null, ''),
-  card_id: Joi.string().required().length(13).messages({
-    'string.length': 'Card ID must be exactly 13 characters long',
-  }),
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required()
-    .messages({
-      'string.email': 'Email must be a valid email address',
+export const registerSchema = z
+  .object({
+    firstName: z.string({
+      required_error: 'Firstname is required',
     }),
-  password: Joi.string().min(8).required().messages({
-    'string.min': 'Password must be at least 8 characters long',
-  }),
-  confirmPassword: Joi.string()
-    .valid(Joi.ref('password'))
-    .required()
-    .messages({
-      'any.only': 'Passwords do not match',
-      'string.empty': 'Confirm password is required',
-    })
-    .strip(),
-});
+    lastName: z.string().optional(),
+    cardId: z.string().length(13, 'Card Id must be exactily 13 characters long').min(1, { message: 'Card Id is required' }),
+    email: z.string().email('Email must be a valid email addess').min(1, { message: 'Email is required' }),
+    password: z.string().min(8, 'Password must be at least 8 characters long').min(1, { message: 'Password is required' }),
+    confirmPassword: z.string().min(1, { message: 'Confirm password is required' }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.confirmPassword !== data.password) {
+      ctx.addIssue({
+        code: 'custom', // กำหนด code เป็น "custom"
+        path: ['confirmPassword'], // ระบุ field ที่มีข้อผิดพลาด
+        message: 'Passwords do not match', // ข้อความแสดงปัญหา
+      });
+    }
+  });
 
-export const loginSchema = Joi.object({
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required()
-    .messages({
-      'string.email': 'Email must be a valid email address',
-      'string.empty': 'Email is required',
-    }),
-  password: Joi.string().min(8).required().messages({
-    'string.min': 'Password must be at least 8 characters long',
-    'string.empty': 'Password is required',
-  }),
-});
-
-// firstname, lastname, card_id
-export const updateProfileSchema = Joi.object({
-  firstname: Joi.string().required(),
-  lastname: Joi.string().optional().allow(null, ''),
-  card_id: Joi.string().length(13).required(),
+export const loginSchema = z.object({
+  emailOrCardId: z.union([z.string().email('Must be a valid email address'), z.string().length(13, 'Card ID must be exactily 13 characters long')]), // ใช้ z.union หากต้องการแยก validation ระหว่าง email และ card_id ชัดเจน
+  password: z.string().min(8, 'Password must be at least 8 characters long').min(1, { message: 'Password is required' }),
 });

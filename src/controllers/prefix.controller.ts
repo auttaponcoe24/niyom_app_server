@@ -4,8 +4,8 @@ import { NextFunction, Request, Response } from 'express';
 
 export const createPrefix = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { prefix_name } = req.body;
-    const { role } = req.user.result;
+    const { prefixName } = req.body as { prefixName: string };
+    const { role } = req.user.data;
 
     if (role !== 'ADMIN') {
       return next(createError('User is not admin', 401));
@@ -13,11 +13,11 @@ export const createPrefix = async (req: Request, res: Response, next: NextFuncti
 
     const prefix = await prisma.prefix.create({
       data: {
-        prefix_name,
+        prefixName,
       },
     });
 
-    res.status(201).json({ message: 'Create prefix successfully', result: prefix });
+    res.status(201).json({ message: 'Create prefix successfully', data: prefix });
   } catch (error) {
     console.error(error);
     return next(error);
@@ -26,21 +26,25 @@ export const createPrefix = async (req: Request, res: Response, next: NextFuncti
 
 export const getAllPrefix = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { start, page_size, keywords } = req.query;
+    const { start, page_size, keywords } = req.query as { start: string; page_size: string; keywords: string };
+
+    const wherePrefin = {
+      prefixName: {
+        contains: keywords,
+      },
+    };
 
     const prefixAll = await prisma.prefix.findMany({
       take: Number(page_size),
       skip: (Number(start) - 1) * Number(page_size),
-      where: {
-        prefix_name: {
-          contains: keywords as string,
-        },
-      },
+      where: wherePrefin,
     });
 
-    const total_record = await prisma.prefix.count();
+    const total_record = await prisma.prefix.count({
+      where: wherePrefin,
+    });
 
-    res.status(200).json({ message: 'ok', result: prefixAll, total_record });
+    res.status(200).json({ message: 'ok', data: prefixAll, total_record });
   } catch (error) {
     console.error(error);
     return next(error);

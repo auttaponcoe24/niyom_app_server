@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Prefix {
-  id          Int    @id @default(autoincrement())
-  prefix_name String
+  id         Int    @id @default(autoincrement())
+  prefixName String
 
   createAt  DateTime   @default(now())
   updateAt  DateTime   @updatedAt
@@ -18,119 +18,118 @@ model Prefix {
 
 model Zone {
   id           Int           @id @default(autoincrement())
-  zone_name    String?       @unique
-  customers    Customer[]
+  zoneName     String?       @unique
   createAt     DateTime      @default(now())
   updateAt     DateTime      @updatedAt
   transactions Transaction[]
+  customers    Customer[]
+  units        Unit[]
 }
 
 model User {
-  id         String    @id @default(uuid())
-  firstname  String
-  lastname   String?
-  card_id    String    @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
-  email      String?   @unique
-  password   String
-  role       RoleUser  @default(USER)
+  id        String    @id @default(uuid())
+  firstName String?
+  lastName  String?
+  cardId    String?   @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  email     String?   @unique
+  password  String?
+  role      Role      @default(USER)
+  payments  Payment[]
+  createAt  DateTime  @default(now())
+  updateAt  DateTime  @updatedAt
+
+  // one-to-one
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?   @unique
-  payments   Payment[]
-  createAt   DateTime  @default(now())
-  updateAt   DateTime  @updatedAt
 }
 
 model Customer {
   id           String        @id @default(uuid())
-  firstname    String
-  lastname     String?
-  card_id      String        @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
-  phone        String?
-  house_number String?
+  imgProfile   String?
+  firstName    String?
+  lastName     String?
+  cardId       String?       @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  role         Role          @default(CUSTOMER)
+  phoneNumber  String?
+  houseNumber  String?
   address      String?
-  status       StatueUser    @default(PENDING)
   prefix       Prefix?       @relation(fields: [prefixId], references: [id])
   prefixId     Int?
-  zoneId       Int?
   zone         Zone?         @relation(fields: [zoneId], references: [id])
+  zoneId       Int?
   units        Unit[]
   transactions Transaction[]
   createAt     DateTime      @default(now())
   updateAt     DateTime      @updatedAt
-  user         User? // One-to-One relation with User
+  user         User?
 }
 
 model Unit {
-  id          Int             @id @default(autoincrement())
-  month       String
-  year        String
-  type        TypeTransaction @default(W)
-  unit_number Int?
-  customer    Customer        @relation(fields: [customerId], references: [id])
-  customerId  String
-  createAt    DateTime        @default(now())
-  updateAt    DateTime?       @updatedAt
+  id         Int             @id @default(autoincrement())
+  date       DateTime?
+  month      String?
+  year       String?
+  type       TypeTransaction @default(W)
+  unitNumber Int?
+  createAt   DateTime        @default(now())
+  updateAt   DateTime        @updatedAt
 
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  customerId      String?
+  zone            Zone?        @relation(fields: [zoneId], references: [id])
+  zoneId          Int?
   // ความสัมพันธ์แบบ one-to-one กับ Transaction
-  oldTransactions Transaction[] @relation("UnitOld")
-  newTransactions Transaction[] @relation("UnitNew")
+  oldTransactions Transaction? @relation("UnitOld")
+  newTransactions Transaction? @relation("UnitNew")
 }
 
 model Transaction {
   id    Int             @id @default(autoincrement())
+  date  DateTime?
   month String?
   year  String?
   type  TypeTransaction @default(W)
 
   // ความสัมพันธ์แบบ one-to-one กับ Unit
-  unit_old    Unit? @relation("UnitOld", fields: [unit_old_id], references: [id])
-  unit_old_id Int?
+  unitOld   Unit? @relation("UnitOld", fields: [unitOldId], references: [id])
+  unitOldId Int?  @unique
 
-  unit_new    Unit? @relation("UnitNew", fields: [unit_new_id], references: [id])
-  unit_new_id Int?
+  unitNew   Unit? @relation("UnitNew", fields: [unitNewId], references: [id])
+  unitNewId Int?  @unique
 
-  unit_used   Int? // หน่วยน้ำที่ใช้
-  amount      Int? // จำนวนค่าน้ำที่คิดจากหน่วย
-  over_due    Int?
-  total_price Int?
-  status      BillStatus @default(PENDING)
-  zone        Zone?      @relation(fields: [zoneId], references: [id])
-  zoneId      Int?
-  customer    Customer?  @relation(fields: [customerId], references: [id])
-  customerId  String?
-  payment     Payment?
-  createAt    DateTime   @default(now())
-  updateAt    DateTime   @updatedAt
+  unitUsed   Int? // หน่วยน้ำที่ใช้
+  amount     Int? // จำนวนค่าน้ำที่คิดจากหน่วย
+  overDue    Int?
+  totalPrice Int?
+  status     Status?
+  Customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+  zone       Zone?     @relation(fields: [zoneId], references: [id])
+  zoneId     Int?
+  payment    Payment[]
+  createAt   DateTime  @default(now())
+  updateAt   DateTime  @updatedAt
 }
 
 model Payment {
   id            Int         @id @default(autoincrement())
-  slipPayment   String?
-  amount        Int // จำนวนเงินที่ชำระ
-  paymentDate   DateTime // วันที่ชำระ
+  date          DateTime? // วันที่ชำระ
+  imgSlip       String
+  amount        Int? // จำนวนเงินที่ชำระ
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-  transactionId Int         @unique
+  transactionId Int
+  status        Status?
   user          User?       @relation(fields: [userId], references: [id])
   userId        String?
+  approveby     String?
   createAt      DateTime    @default(now())
   updateAt      DateTime    @updatedAt
 }
 
-enum BillStatus {
-  PAID
-  PENDING
-  OVERDUE
-}
-
-enum RoleUser {
+enum Role {
   ADMIN
   USER
-}
-
-enum StatueUser {
-  PENDING
-  REJECT
-  SUCCESS
+  CUSTOMER
 }
 
 enum TypeTransaction {
@@ -138,7 +137,7 @@ enum TypeTransaction {
   E
 }
 
-enum StatusPayment {
+enum Status {
   PENDING
   REJECT
   SUCCESS

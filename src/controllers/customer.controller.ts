@@ -1,19 +1,15 @@
 import prisma from '@/models/prisma';
+import upload from '@/utils/cloudinary-service';
 import createError from '@/utils/create-error';
-import {
-  createCustomerSchema,
-  deleteCustomerSchema,
-  getAllCustomerSchema,
-  getByIdCustomerSchema,
-  updateCustomerSchema,
-} from '@/validators/customer.validator';
+import { createCustomerSchema, updateCustomerSchema } from '@/validators/customer.validator';
 import { NextFunction, Request, Response } from 'express';
+import * as fs from 'fs/promises';
 
 export const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.result;
-    const { prefixId, firstname, lastname, card_id, phone, house_number, address, zoneId } = req.body;
-    const { value, error } = createCustomerSchema.validate({ prefixId, firstname, lastname, card_id, phone, house_number, address, zoneId });
+    const { role } = req.user.data;
+    // const { prefixId, firstname, lastname, card_id, phone, house_number, address, zoneId } = req.body;
+    const { data, error } = createCustomerSchema.safeParse(req.body);
 
     if (error) {
       return next(createError(error.message, 401));
@@ -24,10 +20,10 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
     }
 
     const result = await prisma.customer.create({
-      data: value,
+      data: data,
     });
 
-    res.status(201).json({ message: 'ok', result });
+    res.status(201).json({ message: 'ok', data: result });
   } catch (error) {
     console.error('Create customer failed', 401);
     return next(error);
@@ -36,47 +32,48 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const getAllCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.result;
-    const { start, page_size, keywords } = req.query;
-
-    // Validate query parameters
-    const { value, error } = getAllCustomerSchema.validate({ start, page_size, keywords });
-    if (error) {
-      return next(createError(error.message, 400));
-    }
+    const { role } = req.user.data;
+    const { start, page_size, keywords } = req.query as {
+      start: string;
+      page_size: string;
+      keywords: string;
+    };
 
     if (role !== 'ADMIN') {
       return next(createError('User is not ADMIN', 200));
     }
 
     // Retrieve total count of records
-    const total_record = await prisma.customer.count();
-    // const total_record = await prisma.customer.findMany();
 
+    const whereCustomer = {
+      OR: [
+        {
+          firstName: {
+            contains: keywords,
+          },
+        },
+        {
+          lastName: {
+            contains: keywords,
+          },
+        },
+      ],
+    };
     const result = await prisma.customer.findMany({
-      skip: (Number(value.start) - 1) * Number(value.page_size),
-      take: Number(value.page_size),
+      skip: (Number(start) - 1) * Number(page_size),
+      take: Number(page_size),
       include: {
         zone: true,
         prefix: true,
       },
-      where: {
-        OR: [
-          {
-            firstname: {
-              contains: value.keywords,
-            },
-          },
-          {
-            lastname: {
-              contains: value.keywords,
-            },
-          },
-        ],
-      },
+      where: whereCustomer,
     });
 
-    res.status(200).json({ message: 'ok', result, total_record: total_record });
+    const total_record = await prisma.customer.count({
+      where: whereCustomer,
+    });
+
+    res.status(200).json({ message: 'ok', data: result, total_record: total_record });
   } catch (error) {
     next(error);
   }
@@ -84,20 +81,17 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const getByIdCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.query;
-    const { value, error } = getByIdCustomerSchema.validate({ id });
-
-    if (error) return next(createError(error.message, 400));
+    const { id } = req.query as { id: string };
 
     const result = await prisma.customer.findUnique({
       where: {
-        id: value.id,
+        id: id,
       },
     });
 
     if (!result) return next(createError('customerId is empty', 400));
 
-    res.status(200).json({ message: 'ok', result });
+    res.status(200).json({ message: 'ok', data: result });
   } catch (error) {
     console.error('Get by customerId failed', 400);
     return next(error);
@@ -106,9 +100,8 @@ export const getByIdCustomer = async (req: Request, res: Response, next: NextFun
 
 export const updateCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.result;
-    const { id, card_id, firstname, lastname, phone, house_number, address, zoneId, prefixId } = req.body;
-    const { value, error } = updateCustomerSchema.validate({ id, card_id, firstname, lastname, phone, house_number, address, zoneId, prefixId });
+    const { role } = req.user.data;
+    const { data, error } = updateCustomerSchema.safeParse(req.body);
 
     if (error) return next(createError(error.message, 401));
 
@@ -118,21 +111,21 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
 
     const result = await prisma.customer.update({
       where: {
-        id: value.id,
+        id: data.id,
       },
       data: {
-        card_id: value.card_id,
-        firstname: value.firstname,
-        lastname: value.lastname,
-        phone: value.phone,
-        house_number: value.house_number,
-        address: value.address,
-        zoneId: value.zoneId,
-        prefixId: value.prefixId,
+        cardId: data.cardId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber,
+        houseNumber: data.houseNumber,
+        address: data.address,
+        zoneId: data.zoneId,
+        prefixId: data.prefixId,
       },
     });
 
-    res.status(201).json({ message: 'ok', result });
+    res.status(201).json({ message: 'ok', data: result });
   } catch (error) {
     console.error('Update customer failed', error);
     return next(error);
@@ -141,14 +134,11 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const deleteCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.body;
-    const { value, error } = deleteCustomerSchema.validate({ id });
-
-    if (error) return next(createError(error.message, 400));
+    const { id } = req.body as { id: string };
 
     const result = await prisma.customer.delete({
       where: {
-        id: value.id,
+        id,
       },
     });
 
@@ -156,9 +146,46 @@ export const deleteCustomer = async (req: Request, res: Response, next: NextFunc
 
     if (!result) return next(createError('Customer not found', 404));
 
-    res.status(200).json({ message: 'ok', result });
+    res.status(200).json({ message: 'ok', data: result });
   } catch (error) {
     console.error('Delete Customer failed', 500);
     return next(error);
   }
+};
+
+export const uploadProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.body as { id: string };
+    const { folder } = req.params;
+    // console.log('typeFile=>', typeFile);
+    let filePath = '';
+    if (!req.file) return next(createError('Image is requied', 400));
+
+    if (req.file) {
+      // cloudinary
+      // imgProfile = await upload(req.file.path);
+
+      // local
+      filePath = `public/images/${folder}/${req.file.filename}`;
+    }
+
+    const result = await prisma.customer.update({
+      where: {
+        id: id,
+      },
+      data: {
+        imgProfile: filePath,
+      },
+    });
+
+    res.status(201).json({ message: 'Upload Profile', data: result });
+  } catch (error) {
+    console.error(error);
+    return next(error);
+  }
+  // finally {
+  //   if (req.file) {
+  //     fs.unlink(req.file.path);
+  //   }
+  // }
 };

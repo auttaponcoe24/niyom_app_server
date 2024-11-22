@@ -1,1 +1,20 @@
+# Ignore build directories
 /dist
+/build
+
+# Ignore node modules
+/node_modules
+
+# Ignore environment or temporary files
+.env
+*.log
+*.tmp
+
+# Ignore TypeScript declaration files (if not needed)
+/**/*.d.ts
+
+# Ignore specific generated files or folders
+/public
+
+# Ignore ESLint cache file
+.eslintcache

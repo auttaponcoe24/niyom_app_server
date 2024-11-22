@@ -1,24 +1,23 @@
-import Joi from 'joi';
-
-export const createZoneSchema = Joi.object({
-  zone_name: Joi.string().required(),
+import { z } from 'zod';
+export const createZoneSchema = z.object({
+  zoneName: z.string().min(1),
 });
 
-export const getAllZoneSchema = Joi.object({
-  start: Joi.number().required(),
-  page_size: Joi.number().required(),
-  keywords: Joi.string().optional().allow(''),
+export const getAllZoneSchema = z.object({
+  start: z.string().min(1, 'start is required'),
+  page_size: z.string().min(1, 'page_size is required'),
+  keywords: z.string().optional(),
 });
 
-export const getByIdZoneSchema = Joi.object({
-  id: Joi.number().integer().positive().required(),
+export const getByIdZoneSchema = z.object({
+  id: z.string().min(1),
 });
 
-export const updateZoneSchema = Joi.object({
-  id: Joi.number().required(),
-  zone_name: Joi.string().required(),
+export const updateZoneSchema = z.object({
+  id: z.number().min(1),
+  zoneName: z.string().min(1),
 });
 
-export const deleteZoneSchema = Joi.object({
-  id: Joi.number().integer().positive().required(),
+export const deleteZoneSchema = z.object({
+  id: z.number().min(1),
 });

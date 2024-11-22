@@ -32,7 +32,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
 
     delete user.password;
 
-    req.user = { result: user, token };
+    req.user = { data: user, token };
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError' || 'JsonWebTokenError') {

@@ -60,3 +60,37 @@
     "src/logs"
   ]
 }
+// nestjs
+// {
+//   "compilerOptions": {
+//     "module": "commonjs",
+//     "declaration": true,
+//     "removeComments": true,
+//     "emitDecoratorMetadata": true,
+//     "experimentalDecorators": true,
+//     "allowSyntheticDefaultImports": true,
+//     "target": "ES2021",
+//     "sourceMap": true,
+//     "outDir": "./dist",
+//     "baseUrl": "./",
+//     "incremental": true,
+//     "skipLibCheck": true,
+//     "strictNullChecks": true,
+//     "strictBindCallApply": false,
+//     "noEmitOnError": true,
+//     "forceConsistentCasingInFileNames": true,
+//     "strict": true,
+//     "noFallthroughCasesInSwitch": true,
+//     "paths": {
+//       "@/apiweb/*": ["./src/modules/api/webs/*"],
+//       "@/apimobile/*": ["./src/modules/api/mobile/*"],
+//       "@/db/*": ["./src/modules/databases/*"],
+//       "@/config/*": ["./src/config/*"],
+//       "@/schemaPrisma/*": ["./src/shared/generated/*"],
+//       "@/casl/*": ["./src/modules/casl/*"],
+//       "@/src/*": ["./src/*"]
+//     }
+//   },
+//   "include": ["src/**/*.ts", "test/**/*.ts", "src/**/*.d.ts"],
+//   "exclude": ["node_modules", "./eslint.config.mjs"]
+// }

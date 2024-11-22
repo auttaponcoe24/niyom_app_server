@@ -1,3 +1,3 @@
 export type TZone = {
-	zone_name: string;
+  zone_name: string;
 };
