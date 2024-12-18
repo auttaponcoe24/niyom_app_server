@@ -11,12 +11,6 @@ export const getAllTransactionSchema = z.object({
   date: z.string({
     required_error: 'date is required',
   }),
-  // month: z.string({
-  //   required_error: 'month is required',
-  // }),
-  // year: z.string({
-  //   required_error: 'year is required',
-  // }),
   zoneId: z.string({
     required_error: 'start is required',
   }),

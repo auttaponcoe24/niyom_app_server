@@ -10,6 +10,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import 'dayjs/locale/th'; // ติดตั้ง locale ภาษาไทย
 
 // Middlewares
 import errorMiddlewares from '@/middlewares/error';
@@ -32,6 +33,7 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Bangkok');
+dayjs.locale('th');
 
 dotenv.config();
 const app = express();

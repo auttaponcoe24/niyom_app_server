@@ -53,6 +53,7 @@ model Customer {
   phoneNumber  String?
   houseNumber  String?
   address      String?
+  isActive     EnumActive    @default(Y)
   prefix       Prefix?       @relation(fields: [prefixId], references: [id])
   prefixId     Int?
   zone         Zone?         @relation(fields: [zoneId], references: [id])
@@ -141,4 +142,9 @@ enum Status {
   PENDING
   REJECT
   SUCCESS
+}
+
+enum EnumActive {
+  Y
+  N
 }

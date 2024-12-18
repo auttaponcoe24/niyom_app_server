@@ -62,11 +62,33 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
     const result = await prisma.customer.findMany({
       skip: (Number(start) - 1) * Number(page_size),
       take: Number(page_size),
-      include: {
-        zone: true,
-        prefix: true,
-      },
       where: whereCustomer,
+      select: {
+        id: true,
+        imgProfile: true,
+        firstName: true,
+        lastName: true,
+        cardId: true,
+        role: true,
+        phoneNumber: true,
+        houseNumber: true,
+        address: true,
+        isActive: true,
+        zoneId: true,
+        zone: {
+          select: {
+            id: true,
+            zoneName: true,
+          },
+        },
+        prefixId: true,
+        prefix: {
+          select: {
+            id: true,
+            prefixName: true,
+          },
+        },
+      },
     });
 
     const total_record = await prisma.customer.count({

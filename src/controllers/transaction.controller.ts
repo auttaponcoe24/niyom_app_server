@@ -1,5 +1,6 @@
 import prisma from '@/models/prisma';
 import createError from '@/utils/create-error';
+import { ResponseSuccess } from '@/utils/handleResponse';
 import { createTransactionsSchema, getAllTransactionSchema } from '@/validators/transaction.validator';
 import dayjs from 'dayjs';
 import { NextFunction, Request, Response } from 'express';
@@ -25,22 +26,32 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
         .format('YYYY-MM-DD'), // แปลงเป็นรูปแบบ 'YYYY-MM-DD'
     );
 
-    console.log('currentDate', currentDate);
-    console.log('beforeDate', beforeDate);
+    // console.log('currentDate', currentDate);
+    // console.log('beforeDate', beforeDate);
     const year = dayjs(data.date, 'YYYY-MM').format('YYYY');
     const month = dayjs(data.date, 'YYYY-MM').format('M');
 
     const whereCustomer = {
-      AND: [
-        { zoneId: +data.zoneId },
+      zoneId: +data.zoneId,
+      OR: [
         {
-          OR: [
-            { firstName: { contains: data.keywords } }, // Case-insensitive search
-            { lastName: { contains: data.keywords } }, // Case-insensitive search
-          ],
+          firstName: {
+            contains: String(data.keywords),
+          },
+        },
+        {
+          lastName: {
+            contains: String(data.keywords),
+          },
+        },
+        {
+          id: {
+            contains: String(data.keywords),
+          },
         },
       ],
     };
+
     const customers = await prisma.customer.findMany({
       take: +data.page_size,
       skip: (+data.start - 1) * +data.page_size,
@@ -124,91 +135,12 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
       },
     });
 
-    // ใช้ for...of เพื่อรองรับ async/await
-    // for (const customer of customers) {
-    //   // customers.map(async customer => {
-    //   const unitNewDate = await prisma.unit.findFirst({
-    //     where: {
-    //       month: data.month,
-    //       year: data.year,
-    //       customerId: customer.id,
-    //       type: data.type,
-    //     },
-    //     select: {
-    //       id: true,
-    //       month: true,
-    //       year: true,
-    //       type: true,
-    //       unitNumber: true,
-    //     },
-    //   });
-
-    //   const unitOldDate = await prisma.unit.findFirst({
-    //     where: {
-    //       month: data.month === '1' ? '12' : String(Number(data.month) - 1),
-    //       year: data.month === '1' ? String(Number(data.year) - 1) : data.year,
-    //       customerId: customer.id,
-    //       type: data.type,
-    //     },
-    //     select: {
-    //       id: true,
-    //       month: true,
-    //       year: true,
-    //       type: true,
-    //       unitNumber: true,
-    //     },
-    //   });
-
-    //   const previousTransaction = await prisma.transaction.findFirst({
-    //     where: {
-    //       month: data.month === '1' ? '12' : String(Number(data.month) - 1),
-    //       year: data.month === '1' ? String(Number(data.year) - 1) : data.year,
-    //       customerId: customer.id,
-    //       type: data.type,
-    //     },
-    //     select: {
-    //       totalPrice: true,
-    //     },
-    //   });
-
-    //   // Handle case when no previous unit data is available
-    //   const unitUsed = Number(unitNewDate?.unitNumber || 0) - Number(unitOldDate?.unitNumber || 0);
-    //   const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
-    //   const totalPrice = amount + Number(previousTransaction?.totalPrice ?? 0);
-
-    //   // If no transactions exist, create a new one
-    //   if (customer.transactions.length === 0) {
-    //     customer.transactions.push({
-    //       id: 0,
-    //       date: data.date,
-    //       month: data.month,
-    //       year: data.year,
-    //       type: data.type,
-    //       unitNewId: unitNewDate?.id,
-    //       unitNew: unitNewDate as any,
-    //       unitOldId: unitOldDate?.id ?? null,
-    //       unitOld: unitOldDate as any,
-    //       unitUsed: unitUsed || 0, // Ensure unitUsed is not null
-    //       amount: amount,
-    //       overDue: previousTransaction?.totalPrice ?? 0,
-    //       totalPrice: totalPrice,
-    //       status: 'PENDING',
-    //       zoneId: data.zoneId,
-    //       customerId: customer.id,
-    //     });
-    //   }
-    // }
-
-    // const result = customers.filter(customer => !!customer.transactions[0].unitOldId && !!customer.transactions[0].unitNewId);
-
     const total_record = await prisma.customer.count({
       where: whereCustomer,
     });
 
     const findTransactionBefore = await prisma.transaction.findMany({
       where: {
-        // month,
-        // year,
         date: {
           lte: beforeDate,
         },
@@ -217,18 +149,11 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
     });
 
     const result = customers.map((cus, index: number) => {
-      console.log('cus', cus);
-
-      // if (!cus?.units[0] || !cus?.units[1]) return next(createError('ไม่มีหน่วยใหม่ หรือ เก่า', 400));
-      // if (!cus?.units[1]) {
-      //   const unitNotFound = cus.firstName;
-      //   return res.status(200).json({ status: false, messages: 'ไม่มีหน่วยใหม่ หรือ เก่า', data: cus });
-      // }
       // สูตรค่าน้ำ unitUsed * 16 + 50 และ ค่าไฟ unitUsed * 7 + 50 * 0.07
-      const unitUsed = cus.units[1] ? (cus.units[1].unitNumber ?? 0 - cus.units[0].unitNumber ?? 0) : null;
+      const unitUsed = cus?.units[1]?.unitNumber ?? 0 - cus?.units[0]?.unitNumber ?? 0;
       const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
 
-      const tranEmp = findTransactionBefore.find(item => item.customerId === cus.id);
+      const tranEmpBefore = findTransactionBefore.find(item => item.customerId === cus.id);
 
       return cus.transactions.length === 0
         ? {
@@ -245,7 +170,11 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
                   date: cus?.units[0]?.date,
                   unitNumber: cus?.units[0]?.unitNumber,
                 }
-              : null,
+              : {
+                  id: null,
+                  date: dayjs(beforeDate).format('MM/YYYY'),
+                  unitNumber: `ไม่มีหน่วย ณ ${dayjs(beforeDate).format('MM/YYYY')}`,
+                },
             unitNewId: cus?.units[1] ? cus?.units[1]?.id : null,
             unitNew: cus?.units[1]
               ? {
@@ -253,12 +182,16 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
                   date: cus?.units[1]?.date,
                   unitNumber: cus?.units[1].unitNumber,
                 }
-              : null,
+              : {
+                  id: null,
+                  date: dayjs(currentDate).format('MM/YYYY'),
+                  unitNumber: `ไม่มีหน่วย ณ ${dayjs(currentDate).format('MM/YYYY')}`,
+                },
 
             unitUsed,
             amount,
-            overDue: tranEmp ? tranEmp.totalPrice : 0,
-            totalPrice: tranEmp ? tranEmp.totalPrice + amount : amount,
+            overDue: tranEmpBefore ? tranEmpBefore?.totalPrice : 0,
+            totalPrice: tranEmpBefore ? tranEmpBefore?.totalPrice + amount : amount,
             status: 'PENDING',
             customerId: cus.id,
             zoneId: cus.zoneId,
@@ -268,19 +201,6 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
             fullname: `${cus.firstName}  ${cus.lastName}`,
             houseNumber: cus.houseNumber,
             zoneName: cus.zone.zoneName,
-
-            // unitUsed   Int? // หน่วยน้ำที่ใช้
-            // amount     Int? // จำนวนค่าน้ำที่คิดจากหน่วย
-            // overDue    Int?
-            // totalPrice Int?
-            // status     Status?
-            // Customer   Customer? @relation(fields: [customerId], references: [id])
-            // customerId String?
-            // zone       Zone?     @relation(fields: [zoneId], references: [id])
-            // zoneId     Int?
-            // payment    Payment[]
-            // createAt   DateTime  @default(now())
-            // updateAt   DateTime  @updatedAt
           }
         : {
             ...cus.transactions[0],
@@ -300,7 +220,8 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
           };
     });
 
-    res.status(200).json({ message: 'ok', data: result, total_record, findTransactionBefore });
+    // res.status(200).json({ message: 'ok', data: result, total_record });
+    res.status(200).json(ResponseSuccess({ data: result, total_record }));
   } catch (error) {
     console.error(error);
     return next(error);
@@ -368,5 +289,93 @@ export const updateOrCreateTransaction = async (req: Request, res: Response, nex
   } catch (error) {
     console.error(error);
     next(error);
+  }
+};
+
+export const getByIdTransaction = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user.data;
+    const { id } = req.query;
+
+    if (role !== 'ADMIN') return createError('Is not admin', 500);
+
+    const result = await prisma.transaction.findUnique({
+      where: {
+        id: +id,
+      },
+      select: {
+        id: true,
+        date: true,
+        month: true,
+        year: true,
+        type: true,
+        unitOldId: true,
+        unitOld: {
+          select: {
+            id: true,
+            date: true,
+            type: true,
+            unitNumber: true,
+          },
+        },
+
+        unitNewId: true,
+        unitNew: {
+          select: {
+            id: true,
+            date: true,
+            type: true,
+            unitNumber: true,
+          },
+        },
+
+        unitUsed: true,
+        amount: true,
+        overDue: true,
+        totalPrice: true,
+        status: true,
+        customerId: true,
+        Customer: {
+          select: {
+            id: true,
+            prefix: {
+              select: {
+                prefixName: true,
+              },
+            },
+            firstName: true,
+            lastName: true,
+          },
+        },
+        zoneId: true,
+        zone: {
+          select: {
+            id: true,
+            zoneName: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            imgSlip: true,
+            date: true,
+            amount: true,
+            status: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            userId: true,
+            approveby: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({ status: true, message: 'success', data: result });
+  } catch (error) {
+    console.error(error);
   }
 };

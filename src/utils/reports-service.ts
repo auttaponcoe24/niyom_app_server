@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { JSDOM } from 'jsdom';
 import puppeteer, { PDFOptions } from 'puppeteer';
 import * as XLSX from 'xlsx';
+import { PDFDocument } from 'pdf-lib';
 
 export class ReportsService {
   constructor() {
@@ -29,12 +30,7 @@ export class ReportsService {
   }
 
   async handleLoadEjs(ejsFileName: string, reportData: Record<string, unknown>) {
-    const templatePath = path.join(process.cwd(), 'src/controllers/reports/views/demo', ejsFileName);
-    // const templatePath = path.join(
-    //   process.cwd(),
-    //   'src/modules/api/webs/v1/reports/views/reports',
-    //   ejsFileName,
-    // );
+    const templatePath = path.join(process.cwd(), 'src/controllers/reports/views', ejsFileName);
 
     return await ejs.renderFile(templatePath, reportData);
   }
@@ -79,24 +75,41 @@ export class ReportsService {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=medium'],
-      timeout: 60000,
+      timeout: 10 * 60 * 1000,
+      protocolTimeout: 10 * 60 * 1000,
     });
+
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    try {
+      await page.setContent(htmlContent);
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: '10mm',
-        right: '5mm',
-        bottom: '10mm',
-        left: '5mm',
-      },
-      ...PDFOptions,
-    });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '10mm',
+          right: '5mm',
+          bottom: '10mm',
+          left: '5mm',
+        },
+        displayHeaderFooter: true,
+        headerTemplate: `<div style="font-size: 10px; width: 100%; text-align: right; padding-right: 10mm;">
+            Page <span class="pageNumber"></span> / <span class="totalPages"></span>
+          </div>`,
+        footerTemplate: '<span></span>',
+        preferCSSPageSize: true,
+        omitBackground: false,
+        timeout: 0,
+        ...PDFOptions,
+      });
 
-    await browser.close();
-    return pdfBuffer;
+      return pdfBuffer;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw new Error('Failed to generate PDF');
+    } finally {
+      await browser.close();
+    }
   }
 
   async generateExcelFromHtml(fileName: string, htmlContent: string) {
@@ -120,14 +133,17 @@ export class ReportsService {
   async generateStreamExcelFromHtml(htmlContent: string) {
     const dom = new JSDOM(htmlContent);
     const document = dom.window.document;
-    const table = document.querySelector('#tbody');
 
+    const table = document.querySelector('#tbody');
     if (!table) {
-      throw new Error('No table found in the provided HTML Content.');
+      throw new Error('No table found in the provided HTML content.');
     }
+
     const worksheet = XLSX.utils.table_to_sheet(table);
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Report Data');
+
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     return excelBuffer;
@@ -146,21 +162,61 @@ export class ReportsService {
     }
   }
 
-  async generateStreamPdfOrXcel(reportType: 'pdf' | 'excel' | 'html', fileName: string, htmlContent: string, res: Response, PDFOptions?: PDFOptions) {
+  async generateStreamPdfOrXcel(
+    reportType: 'pdf' | 'excel' | 'html',
+    fileName: string,
+    htmlContent: string | [],
+    res: Response,
+    PDFOptions?: PDFOptions & Record<string, string | boolean | number>,
+  ) {
     switch (reportType) {
+      // case 'pdf':
+      //   const pdfBuffer = await this.generatePDFStream(htmlContent, PDFOptions);
+      //   if (!pdfBuffer) return res.status(500).send('Failed to Generate PDF');
+      //   res.set({
+      //     'Content-Type': 'application/pdf',
+      //     'Content-Disposition': `inline; filename="${fileName}.pdf"`,
+      //   });
+      //   return res.end(pdfBuffer);
       case 'pdf':
-        const pdfBuffer = await this.generatePDFStream(htmlContent, PDFOptions);
-        if (!pdfBuffer) return res.status(500).send('Failed to Generate PDF');
+        let pdfBuffer = await this.generatePDFStream(htmlContent as string, PDFOptions);
+        if (!pdfBuffer) {
+          return res.status(500).send('Failed to generate PDF');
+        }
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const totalPages = pdfDoc.getPageCount();
+        let pageNumber = +(PDFOptions?.pageNumber || 1);
+        if (PDFOptions?.displayHeaderFooter || PDFOptions?.displayHeaderFooter === false) {
+          const pages = pdfDoc.getPages();
+
+          pages.forEach((page, _index) => {
+            const { width, height } = page.getSize();
+            page.drawText(`Page ${pageNumber}`, {
+              x: width - 50,
+              y: height - 20,
+              size: 8,
+            });
+            pageNumber++;
+          });
+          pdfBuffer = await pdfDoc.save();
+        }
+
         res.set({
           'Content-Type': 'application/pdf',
           'Content-Disposition': `inline; filename="${fileName}.pdf"`,
+          'X-Total-Pages': totalPages.toString(),
+          'X-Page-Number': pageNumber.toString(),
+          'Access-Control-Expose-Headers': 'X-Total-Pages, X-Page-Number',
         });
+
         return res.end(pdfBuffer);
       case 'excel':
-        const excelBuffer = await this.generateStreamExcelFromHtml(htmlContent);
+        const excelBuffer = await this.generateStreamExcelFromHtml(htmlContent as string);
+        // const excelBuffer = await this.htmlToXlsxService.convertHtmlToXlsx(htmlContent as string);
         if (!excelBuffer) {
           return res.status(500).send('Failed to generate Excel');
         }
+
         res.set({
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename=${fileName}.xlsx`,

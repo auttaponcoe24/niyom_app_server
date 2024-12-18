@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Demo</title>
+  <%- include('../styles/reportStyle.ejs'); %>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet" />
+</head>
+
+<body id="tbody">
+  <table style="width: 100%; text-align: center; margin-bottom: 10px;">
+    <thead>
+      <tr>
+        <th style="align-items: center; font-size: 20px; font-weight: 400"><%= headerReport %></th>
+      </tr>
+    </thead>
+  </table>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width: 1%;" >ลำดับ</th>
+        <th style="width: 1%;" >ประเภท</th>
+        <th style="width: 8%;" >บ้านเลขที่</th>
+        <th style="width: 16%;" >ชื่อ - สกุล</th>
+        <th style="width: 6%;" ><%= dateUnitOld %></th>
+        <th style="width: 6%;" ><%= dateUnitNew %></th>
+        <!-- <th style="width: 8%;" >หน่วยที่ใช้</th> -->
+        <th style="width: 12%;" >ราคาต่อหน่วย</th>
+        <th style="width: 8%;" >ยอดค้าง</th>
+        <th style="width: 8%;" >รวมสุทธิ</th>
+        <th >หมายเหตุ</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% getCustomer.map((customer, index) => { %>
+        <%
+          // const fullName = `${customer?.prefix?.prefixName} ${customer?.firstName} ${customer?.lastName}`
+          const fullName = `${customer?.firstName} ${customer?.lastName}`
+
+          const type = customer?.transactions[0]?.type === 'W' ? 'น้ำ' : 'ไฟฟ้า'
+          const unitNumberOld = customer?.transactions[0]?.unitOld?.unitNumber
+          const unitNumberNew = customer?.transactions[0]?.unitNew?.unitNumber
+          const unitUsed = customer?.transactions[0]?.unitUsed
+          const amount = customer?.transactions[0]?.amount
+          const overDue = customer?.transactions[0]?.overDue
+          const totalPrice = customer?.transactions[0]?.totalPrice
+          %>
+          <tr>
+        <td><%= ++index %></td>
+        <td><%= type %></td>
+        <td><%= customer?.houseNumber ? customer?.houseNumber : '-' %></td>
+        <td style="text-align: left;"><%= fullName %></td>
+        <td><%= unitNumberOld %></td>
+        <td><%= unitNumberNew %></td>
+        <!-- <td><%= unitUsed %></td> -->
+        <td><%= amount %></td>
+        <td><%= overDue %></td>
+        <td><%= totalPrice %></td>
+        <td></td>
+
+      </tr>
+        <% }) %>
+    </tbody>
+  </table>
+</body>
+
+</html>
