@@ -23,19 +23,19 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 app.get('/', async (req: Request, res: Response) => {
-  const test: string = 'Hello world';
-  res.json({ message: test });
+  const test: string = 'Hello worldxxx';
+  res.status(200).json({ message: test });
 });
 
-app.use('/zone', zoneRoute);
-app.use('/prefix', prefixRoute);
-app.use('/auth', authRoute);
-app.use('/customer', customerRoute);
-app.use('/transaction', transactionRoute);
-app.use('/unit', unitRoute);
+app.use('/api/auth', authRoute);
+app.use('/api/zone', zoneRoute);
+app.use('/api/prefix', prefixRoute);
+app.use('/api/customer', customerRoute);
+app.use('/api/transaction', transactionRoute);
+app.use('/api/unit', unitRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
 
-const PORT = process.env.PORT || '3000';
-app.listen(PORT, () => console.log(`Server is run on PORT: ${PORT}`));
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, '0.0.0.0', () => console.log(`Server is run on PORT: ${PORT}`));

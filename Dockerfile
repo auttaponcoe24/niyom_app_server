@@ -1,26 +1,43 @@
-# Common build stage
-FROM node:20-slim as common-build-stage
+# ใช้ Node.js เวอร์ชัน 20 เป็น base image
+FROM node:20-slim as build-stage
 
-COPY . ./app
+# ติดตั้ง OpenSSL และ dependencies
+RUN apt-get update -y && apt-get install -y openssl
 
+# สร้าง app directory
 WORKDIR /app
 
-RUN yarn set version berry
+# คัดลอกไฟล์ package.json และ yarn.lock
+COPY package.json yarn.lock ./
 
+# ติดตั้ง dependencies
 RUN yarn install
 
-EXPOSE 8080
+# คัดลอกไฟล์ทั้งหมดในโปรเจกต์
+COPY . .
 
-# Development build stage
-FROM common-build-stage as development-build-stage
+# Generate Prisma Client และ build application
+RUN yarn prisma generate && yarn build:alias
 
-ENV NODE_ENV development
+# ใช้ image แบบเบาเพื่อรัน production (multi-stage build)
+# FROM node:20-slim as production-stage
 
-CMD ["yarn", "dev"]
+# สร้าง app directory
+# WORKDIR /app
 
-# Production build stage
-FROM common-build-stage as production-build-stage
+# คัดลอก dependencies จาก build-stage
+# COPY --from=build-stage /app/node_modules ./node_modules
 
-ENV NODE_ENV production
+# คัดลอกไฟล์ที่จำเป็น
+# COPY --from=build-stage /app/dist ./dist
+# COPY --from=build-stage /app/prisma ./prisma
+# COPY --from=build-stage /app/package.json ./package.json
 
-CMD ["yarn", "start"]
+# เปิดพอร์ต 8000 สำหรับ container ต้องตรงกับ port project
+EXPOSE 8000
+
+# กำหนด environment เป็น production
+# ENV NODE_ENV=production
+
+# รันแอปพลิเคชันในโหมด production
+CMD ["yarn", "run", "start"]
