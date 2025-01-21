@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env  # ใช้ไฟล์ .env สำหรับการตั้งค่าตัวแปรสภาพแวดล้อม
+    ports:
+      - '3000:8000'  # Map port 3000 ของ container กับ port 8000 ของเครื่อง host
+    volumes:
+      - .:/app           # Mount โฟลเดอร์โค้ดของคุณใน container
+      - /app/node_modules # ติดตั้ง node_modules ภายใน container (เพื่อไม่ให้มีปัญหาจากการ mount)
+    command: ["yarn", "run", "dev"]  # รันคำสั่ง `yarn dev` เมื่อคอนเทนเนอร์เริ่มทำงาน
+    restart: unless-stopped
+

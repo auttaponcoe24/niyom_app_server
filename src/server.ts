@@ -23,7 +23,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 app.get('/', async (req: Request, res: Response) => {
-  const test: string = 'Hello worldxxx';
+  const test: string = 'Hello world';
   res.status(200).json({ message: test });
 });
 
@@ -38,4 +38,4 @@ app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
 
 const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server is run on PORT: ${PORT}`));
+app.listen(PORT, () => console.log(`Server is run on PORT: ${PORT}`));
