@@ -1,4 +1,4 @@
-export const ResponseSuccess = (
+export const responseSuccess = (
   data: Record<string, unknown> | Record<string, unknown>[],
   message?: string,
 ): Record<string, unknown>[] | Record<string, unknown> => {

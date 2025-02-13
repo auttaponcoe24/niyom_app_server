@@ -5,7 +5,7 @@ export const createZoneSchema = z.object({
 
 export const getAllZoneSchema = z.object({
   start: z.string().min(1, 'start is required'),
-  page_size: z.string().min(1, 'page_size is required'),
+  pageSize: z.string().min(1, 'pageSize is required'),
   keywords: z.string().optional(),
 });
 

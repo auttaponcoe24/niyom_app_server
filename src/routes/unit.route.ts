@@ -4,7 +4,7 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.get('/getAll', authMiddleware, getAllUnit);
+router.get('/get-all', authMiddleware, getAllUnit);
 
 router.put('/updateOrCreate', authMiddleware, updateOrCreateUnit);
 

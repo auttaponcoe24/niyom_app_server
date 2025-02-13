@@ -8,24 +8,58 @@ import * as fs from 'fs/promises';
 export const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role } = req.user.data;
-    // const { prefixId, firstname, lastname, card_id, phone, house_number, address, zoneId } = req.body;
-    const { data, error } = createCustomerSchema.safeParse(req.body);
+    // const { data, error } = createCustomerSchema.safeParse(req.body);
 
-    if (error) {
-      return next(createError(error.message, 401));
-    }
+    // if (error) {
+    //   return next(createError(error.message, 401));
+    // }
+
+    const data = req.body as {
+      prefixId?: number;
+      no?: number;
+      firstName?: string;
+      lastName?: string;
+      cardId?: string;
+      phoneNumber?: string;
+      houseNumber?: string;
+      address?: string;
+      zoneId?: number;
+    };
 
     if (role !== 'ADMIN') {
-      return next(createError('User is not ADMIN', 401));
+      return next(createError('User is not admin', 401));
     }
 
-    const result = await prisma.customer.create({
-      data: data,
+    const customer = await prisma.customer.create({
+      data: {
+        ...data,
+      },
     });
 
-    res.status(201).json({ message: 'ok', data: result });
+    // ดึงลูกค้าทั้งหมดที่มี `no` มากกว่าหรือเท่ากับที่เพิ่มใหม่
+    const filterCustomers = await prisma.customer.findMany({
+      where: {
+        no: { gte: customer.no }, // ดึง `no` ที่มากกว่าหรือเท่ากับ customer.no
+        id: { not: customer.id }, // ต้องไม่ใช่ ID ของตัวที่เพิ่งสร้าง
+        zoneId: customer.zoneId,
+      },
+      orderBy: { no: 'asc' },
+    });
+
+    // อัปเดตหมายเลข `no` แบบ batch
+    if (filterCustomers.length > 0) {
+      const updatePromises = filterCustomers.map((cus, index) =>
+        prisma.customer.update({
+          where: { id: cus.id },
+          data: { no: customer.no + (index + 1) },
+        }),
+      );
+      await Promise.all(updatePromises);
+    }
+
+    res.status(201).json({ message: 'ok', data: customer });
   } catch (error) {
-    console.error('Create customer failed', 401);
+    console.error('Create customer failed:', error);
     return next(error);
   }
 };
@@ -33,17 +67,16 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
 export const getAllCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role } = req.user.data;
-    const { start, page_size, keywords } = req.query as {
+    const { start, pageSize, keywords, zoneId } = req.query as {
       start: string;
-      page_size: string;
+      pageSize: string;
       keywords: string;
+      zoneId: string;
     };
 
     if (role !== 'ADMIN') {
-      return next(createError('User is not ADMIN', 200));
+      return next(createError('User is not admin', 400));
     }
-
-    // Retrieve total count of records
 
     const whereCustomer = {
       OR: [
@@ -58,30 +91,29 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
           },
         },
       ],
+      zoneId: +zoneId,
     };
     const result = await prisma.customer.findMany({
-      skip: (Number(start) - 1) * Number(page_size),
-      take: Number(page_size),
-      where: whereCustomer,
+      skip: (Number(start) - 1) * Number(pageSize),
+      take: Number(pageSize),
+      where: { ...whereCustomer },
+      orderBy: { no: 'asc' },
       select: {
         id: true,
-        imgProfile: true,
+        no: true,
         firstName: true,
         lastName: true,
         cardId: true,
-        role: true,
         phoneNumber: true,
         houseNumber: true,
         address: true,
         isActive: true,
-        zoneId: true,
         zone: {
           select: {
             id: true,
             zoneName: true,
           },
         },
-        prefixId: true,
         prefix: {
           select: {
             id: true,
@@ -109,6 +141,29 @@ export const getByIdCustomer = async (req: Request, res: Response, next: NextFun
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        no: true,
+        firstName: true,
+        lastName: true,
+        cardId: true,
+        phoneNumber: true,
+        houseNumber: true,
+        address: true,
+        isActive: true,
+        zone: {
+          select: {
+            id: true,
+            zoneName: true,
+          },
+        },
+        prefix: {
+          select: {
+            id: true,
+            prefixName: true,
+          },
+        },
+      },
     });
 
     if (!result) return next(createError('customerId is empty', 400));
@@ -123,33 +178,104 @@ export const getByIdCustomer = async (req: Request, res: Response, next: NextFun
 export const updateCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role } = req.user.data;
-    const { data, error } = updateCustomerSchema.safeParse(req.body);
+    // const { data, error } = updateCustomerSchema.safeParse(req.body);
 
-    if (error) return next(createError(error.message, 401));
+    // if (error) return next(createError(error.message, 401));
+
+    const data = req.body as {
+      id?: string;
+      no?: number;
+      firstName?: string;
+      lastName?: string;
+      cardId?: string;
+      phoneNumber?: string;
+      houseNumber?: string;
+      address?: string;
+      prefixId?: number;
+      zoneId?: number;
+    };
 
     if (role !== 'ADMIN') {
       return next(createError('User is not ADMIN', 401));
     }
 
+    // ดึงข้อมูลเดิมก่อนอัปเดต
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { id: data.id },
+      select: { no: true },
+    });
+
+    if (!existingCustomer) {
+      return next(createError('customer is not found', 404));
+    }
+
+    const checkCardId = data.cardId
+      ? {
+          ...data,
+        }
+      : {
+          id: data.id,
+          no: data.no,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: data.phoneNumber,
+          houseNumber: data.houseNumber,
+          address: data.address,
+          prefixId: data.prefixId,
+          zoneId: data.zoneId,
+        };
+
+    // อัปเดตข้อมูลลูกค้า
+    const customer = await prisma.customer.update({
+      where: { id: data.id },
+      data: { ...checkCardId },
+    });
+
+    // หาก `no` มีการเปลี่ยนแปลง ค่อยอัปเดตลำดับ
+    if (customer.no !== existingCustomer.no) {
+      const filterCustomers = await prisma.customer.findMany({
+        where: {
+          no: { gte: customer.no },
+          id: { not: customer.id },
+          zoneId: customer.zoneId,
+        },
+        orderBy: { no: 'asc' },
+      });
+
+      if (filterCustomers.length > 0) {
+        const updatePromises = filterCustomers.map((cus, index) =>
+          prisma.customer.update({
+            where: { id: cus.id },
+            data: { no: customer.no + (index + 1) },
+          }),
+        );
+        await Promise.all(updatePromises);
+      }
+    }
+
+    res.status(200).json({ message: 'ok', data: customer });
+  } catch (error) {
+    console.error('Update customer failed:', error);
+    return next(error);
+  }
+};
+
+export const activeCustomer = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id, isActive } = req.body as { id: string; isActive: boolean };
+
     const result = await prisma.customer.update({
       where: {
-        id: data.id,
+        id: id,
       },
       data: {
-        cardId: data.cardId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phoneNumber: data.phoneNumber,
-        houseNumber: data.houseNumber,
-        address: data.address,
-        zoneId: data.zoneId,
-        prefixId: data.prefixId,
+        isActive: isActive,
       },
     });
 
-    res.status(201).json({ message: 'ok', data: result });
+    res.status(201).json({ status: true, message: `customer change active is : ${isActive}`, data: result });
   } catch (error) {
-    console.error('Update customer failed', error);
+    console.error(error);
     return next(error);
   }
 };
@@ -173,41 +299,4 @@ export const deleteCustomer = async (req: Request, res: Response, next: NextFunc
     console.error('Delete Customer failed', 500);
     return next(error);
   }
-};
-
-export const uploadProfile = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.body as { id: string };
-    const { folder } = req.params;
-    // console.log('typeFile=>', typeFile);
-    let filePath = '';
-    if (!req.file) return next(createError('Image is requied', 400));
-
-    if (req.file) {
-      // cloudinary
-      // imgProfile = await upload(req.file.path);
-
-      // local
-      filePath = `public/images/${folder}/${req.file.filename}`;
-    }
-
-    const result = await prisma.customer.update({
-      where: {
-        id: id,
-      },
-      data: {
-        imgProfile: filePath,
-      },
-    });
-
-    res.status(201).json({ message: 'Upload Profile', data: result });
-  } catch (error) {
-    console.error(error);
-    return next(error);
-  }
-  // finally {
-  //   if (req.file) {
-  //     fs.unlink(req.file.path);
-  //   }
-  // }
 };

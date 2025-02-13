@@ -6,6 +6,6 @@ const router = Router();
 
 router.post('/create', authMiddleware, createPrefix);
 
-router.get('/getAll', getAllPrefix);
+router.get('/get-all', getAllPrefix);
 
 export default router;

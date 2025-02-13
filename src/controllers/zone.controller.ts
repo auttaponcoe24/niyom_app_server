@@ -32,23 +32,15 @@ export const createZone = async (req: Request, res: Response, next: NextFunction
 
 export const getAllZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.data;
     const { data, error } = getAllZoneSchema.safeParse(req.query);
-
-    // const { start, page_size, keywords } = req.query;
 
     if (error) {
       return next(createError(error.message, 401));
     }
 
-    if (role !== 'ADMIN') {
-      return next(createError('not admin', 201));
-    }
     const result = await prisma.zone.findMany({
-      skip: (Number(data.start) - 1) * Number(data.page_size),
-      take: Number(data.page_size),
-      // skip: (Number(start) - 1) * Number(page_size),
-      // take: Number(page_size),
+      skip: (Number(data.start) - 1) * Number(data.pageSize),
+      take: Number(data.pageSize),
       where: {
         zoneName: {
           contains: String(data.keywords),
@@ -72,16 +64,12 @@ export const getAllZone = async (req: Request, res: Response, next: NextFunction
 
 export const getByIdZone = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role } = req.user.data;
     const { data, error } = getByIdZoneSchema.safeParse(req.query);
 
     if (error) {
       return next(createError(error.message, 400));
     }
 
-    if (role !== 'ADMIN') {
-      return next(createError('User is not ADMIN', 400));
-    }
     const result = await prisma.zone.findUnique({
       where: {
         id: +data.id,

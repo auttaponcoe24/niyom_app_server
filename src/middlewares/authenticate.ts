@@ -18,7 +18,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
 
     const token = authorization.split(' ')[1];
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY || 'secretKeyRandom') as IPayload;
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'secretKeyRandom') as IPayload;
 
     const user = await prisma.user.findUnique({
       where: {
@@ -30,9 +30,9 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
       return next(createError('unauthenticated', 400));
     }
 
-    delete user.password;
+    const { password: _, ...userWithoutPassword } = user;
 
-    req.user = { data: user, token };
+    req.user = { data: userWithoutPassword, accessToken: token };
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError' || 'JsonWebTokenError') {

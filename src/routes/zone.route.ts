@@ -6,9 +6,9 @@ const router = Router();
 
 router.post('/create', authMiddleware, createZone);
 
-router.get('/getAll', authMiddleware, getAllZone);
+router.get('/get-all', getAllZone);
 
-router.get('/getById', authMiddleware, getByIdZone);
+router.get('/getById', getByIdZone);
 
 router.patch('/update', authMiddleware, updateZone);
 

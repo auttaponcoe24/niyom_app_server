@@ -1,41 +1,47 @@
 import { NextFunction, Request, Response } from 'express';
 import prisma from '../models/prisma';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import createError from '@/utils/create-error';
+import { responseSuccess } from '@/utils/handleResponse';
 import { loginSchema, registerSchema } from '@/validators/auth.validator';
+import { User, RoleUser } from '@prisma/client';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // รับข้อมูลจากฟอร์มการลงทะเบียน
-    const { data, error } = registerSchema.safeParse(req.body);
+    // const { data, error } = registerSchema.safeParse(req.body);
 
-    if (error) {
-      return next(createError(error.message, 401));
-    }
-    // if (password !== confirmPassword) {
-    //   return next(createError('Password does not match Confirm Password', 401));
+    // if (error) {
+    //   return next(createError(error.message, 401));
     // }
+
+    const data = req.body as {
+      firstName?: string;
+      lastName?: string;
+      cardId?: string;
+      email: string;
+      password: string;
+    };
 
     // Hash the password
     const hashPassword = await bcrypt.hash(data.password, 12);
 
     // Create the user in the database
-    const newUser = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        cardId: data.cardId,
-        email: data.email,
+        ...data,
         password: hashPassword,
       },
     });
 
     // Send a response back to the client
-    res.status(201).json({
-      message: 'User registered successfully',
-      data: newUser,
-    });
+    // res.status(201).json({
+    //   message: 'User registered successfully',
+    //   data: newUser,
+    // });
+
+    res.status(201).json(responseSuccess(user, 'Register Successfully'));
   } catch (error) {
     console.error('Error in registration:', error);
     return next(error); // Pass errors to the error handler middleware
@@ -78,16 +84,17 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       role: user.role,
     };
 
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET_KEY || 'secretKeyRandom', { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
+    // const accessToken = jwt.sign(payload, process.env.JWT_SECRET || 'secretKeyRandom', { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
 
+    const { accessToken } = await generateTokens(user);
     // delete user.password;
     // Exclude sensitive fields from user response
     const { password: _, ...userWithoutPassword } = user;
 
-    res.status(200).json({
+    res.status(201).json({
       message: 'Login successfully',
       data: userWithoutPassword,
-      token: accessToken,
+      accessToken: accessToken,
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -95,10 +102,25 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+const generateTokens = async (users: User) => {
+  const payload = {
+    id: users.id,
+    email: users.email,
+    role: users.role,
+  };
+
+  const [accessToken, refreshToken] = await Promise.all([
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }),
+    jwt.sign(payload, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.REFRESH_JWT_EXPIRES_IN }),
+  ]);
+
+  return { accessToken, refreshToken };
+};
+
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data, token } = req.user;
-    res.status(200).json({ message: 'Get Profile', data, token: token });
+    const { data, accessToken } = req.user;
+    res.status(200).json({ message: 'Get Profile', data, accessToken });
   } catch (error) {
     next(error);
   }
@@ -125,12 +147,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
       where: {
         id: id,
       },
-      // data: {
-      //   firstName,
-      //   lastName,
-      //   cardId,
-      //   customerId,
-      // },
+
       data: updateData, // ใช้เฉพาะฟิลด์ที่มีค่า เพื่อกันค่าที่ไม่ได้ส่งไปต้องไปอัพเดท
     });
 
@@ -146,36 +163,36 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 export const getUserAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { role } = req.user.data;
-    const { start, page_size, keywords } = req.query;
+    const { start, pageSize, keywords } = req.query;
 
     if (role !== 'ADMIN') {
       return next(createError('User is not ADMIN', 404));
     }
 
+    const whereUser = {
+      role: 'USER' as RoleUser,
+      OR: [
+        {
+          firstName: {
+            contains: String(keywords),
+          },
+        },
+        {
+          lastName: {
+            contains: String(keywords),
+          },
+        },
+      ],
+    };
+
     const userAll = await prisma.user.findMany({
-      take: Number(page_size),
-      skip: (Number(start) - 1) * Number(page_size),
-      where: {
-        role: 'USER',
-        OR: [
-          {
-            firstName: {
-              contains: String(keywords),
-            },
-          },
-          {
-            lastName: {
-              contains: String(keywords),
-            },
-          },
-        ],
-      },
+      take: Number(pageSize),
+      skip: (Number(start) - 1) * Number(pageSize),
+      where: { ...whereUser },
     });
 
     const total_record = await prisma.user.count({
-      where: {
-        role: 'USER',
-      },
+      where: { ...whereUser },
     });
 
     res.status(200).json({ message: 'Get users successfully', data: userAll, total_record });

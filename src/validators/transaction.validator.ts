@@ -4,10 +4,11 @@ export const getAllTransactionSchema = z.object({
   start: z.string({
     required_error: 'start is required',
   }),
-  page_size: z.string({
+  pageSize: z.string({
     required_error: 'page_size is required',
   }),
   keywords: z.string().optional(),
+  customerId: z.string().optional(),
   date: z.string({
     required_error: 'date is required',
   }),
@@ -22,8 +23,6 @@ export const getAllTransactionSchema = z.object({
 export const createTransactionSchema = z.object({
   id: z.number(),
   date: z.string(),
-  month: z.string().optional(),
-  year: z.string().optional(),
   type: z.enum(['W', 'E'], {
     message: 'Type must be either W or E',
   }),
@@ -32,10 +31,11 @@ export const createTransactionSchema = z.object({
   unitUsed: z.number().optional(),
   amount: z.number().optional(),
   overDue: z.number().optional(),
-  totalPrice: z.number().optional(),
-  status: z.enum(['PENDING', 'REJECT', 'SUCCESS']),
-  zoneId: z.number().optional(),
+  pay: z.number().optional(),
+  total: z.number().optional(),
+  status: z.enum(['WAITING', 'PAY']),
   customerId: z.string().optional(),
+  zoneId: z.number().optional(),
 });
 
 export const createTransactionsSchema = z.array(createTransactionSchema);

@@ -1,136 +1,143 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-arm64-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Prefix {
   id         Int    @id @default(autoincrement())
-  prefixName String
+  prefixName String @map("prefix_name")
 
-  createAt  DateTime   @default(now())
-  updateAt  DateTime   @updatedAt
+  createdAt DateTime   @default(now()) @map("created_At")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
   customers Customer[]
+
+  @@map("prefixs")
 }
 
 model Zone {
-  id           Int           @id @default(autoincrement())
-  zoneName     String?       @unique
-  createAt     DateTime      @default(now())
-  updateAt     DateTime      @updatedAt
-  transactions Transaction[]
+  id       Int     @id @default(autoincrement())
+  zoneName String? @unique @map("zone_name")
+
+  createdAt    DateTime      @default(now()) @map("created_At")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
   customers    Customer[]
+  transactions Transaction[]
   units        Unit[]
+
+  @@map("zones")
 }
 
 model User {
-  id        String    @id @default(uuid())
-  firstName String?
-  lastName  String?
-  cardId    String?   @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
-  email     String?   @unique
-  password  String?
-  role      Role      @default(USER)
-  payments  Payment[]
-  createAt  DateTime  @default(now())
-  updateAt  DateTime  @updatedAt
-
-  // one-to-one
+  id         String    @id @default(uuid())
+  firstName  String?   @map("first_name")
+  lastName   String?   @map("last_name")
+  cardId     String?   @unique @map("card_id") @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  email      String    @unique
+  password   String
+  role       RoleUser  @default(USER)
+  customerId String?   @unique @map("customer_id")
   customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?   @unique
+
+  createdAt    DateTime      @default(now()) @map("created_At")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  transactions Transaction[]
+
+  @@map("users")
 }
 
 model Customer {
   id           String        @id @default(uuid())
-  imgProfile   String?
-  firstName    String?
-  lastName     String?
-  cardId       String?       @unique @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
-  role         Role          @default(CUSTOMER)
-  phoneNumber  String?
-  houseNumber  String?
+  no           Int?
+  firstName    String?       @map("first_name")
+  lastName     String?       @map("last_name")
+  cardId       String?       @unique @map("card_id") @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  phoneNumber  String?       @map("phone_number")
+  houseNumber  String?       @map("house_number")
   address      String?
-  isActive     EnumActive    @default(Y)
+  isActive     Boolean       @default(true)
+  prefixId     Int?          @map("prefix_id")
   prefix       Prefix?       @relation(fields: [prefixId], references: [id])
-  prefixId     Int?
+  zoneId       Int?          @map("zone_id")
   zone         Zone?         @relation(fields: [zoneId], references: [id])
-  zoneId       Int?
+  createdAt    DateTime      @default(now()) @map("created_At")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
   units        Unit[]
   transactions Transaction[]
-  createAt     DateTime      @default(now())
-  updateAt     DateTime      @updatedAt
-  user         User?
+  user         User? // One-to-One relation with User
+
+  @@map("customers")
 }
 
 model Unit {
   id         Int             @id @default(autoincrement())
-  date       DateTime?
-  month      String?
-  year       String?
+  date       DateTime
   type       TypeTransaction @default(W)
-  unitNumber Int?
-  createAt   DateTime        @default(now())
-  updateAt   DateTime        @updatedAt
+  unitNumber Int?            @map("unit_number")
+  customerId String          @map("customer_id")
+  customer   Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  zoneId     Int?            @map("zone_id")
+  zone       Zone?           @relation(fields: [zoneId], references: [id])
+  createdAt  DateTime        @default(now()) @map("created_At")
+  updatedAt  DateTime?       @updatedAt @map("updated_at")
 
-  customer        Customer?    @relation(fields: [customerId], references: [id])
-  customerId      String?
-  zone            Zone?        @relation(fields: [zoneId], references: [id])
-  zoneId          Int?
   // ความสัมพันธ์แบบ one-to-one กับ Transaction
-  oldTransactions Transaction? @relation("UnitOld")
-  newTransactions Transaction? @relation("UnitNew")
+  oldTransactions Transaction[] @relation("UnitOld")
+  newTransactions Transaction[] @relation("UnitNew")
+
+  @@map("units")
 }
 
 model Transaction {
-  id    Int             @id @default(autoincrement())
-  date  DateTime?
-  month String?
-  year  String?
-  type  TypeTransaction @default(W)
+  id   Int             @id @default(autoincrement())
+  date DateTime
+  type TypeTransaction @default(W)
 
   // ความสัมพันธ์แบบ one-to-one กับ Unit
   unitOld   Unit? @relation("UnitOld", fields: [unitOldId], references: [id])
-  unitOldId Int?  @unique
+  unitOldId Int?  @map("unit_old_id")
 
   unitNew   Unit? @relation("UnitNew", fields: [unitNewId], references: [id])
-  unitNewId Int?  @unique
+  unitNewId Int?  @map("unit_new_id")
 
-  unitUsed   Int? // หน่วยน้ำที่ใช้
+  unitUsed   Int?       @map("unit_used") // หน่วยน้ำที่ใช้
   amount     Int? // จำนวนค่าน้ำที่คิดจากหน่วย
-  overDue    Int?
-  totalPrice Int?
-  status     Status?
-  Customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?
-  zone       Zone?     @relation(fields: [zoneId], references: [id])
-  zoneId     Int?
-  payment    Payment[]
-  createAt   DateTime  @default(now())
-  updateAt   DateTime  @updatedAt
+  overDue    Int?       @map("over_due") // ยอดค้าง
+  pay        Int?
+  total      Int?       @map("total")
+  status     BillStatus @default(WAITING)
+  zoneId     Int?       @map("zone_id")
+  zone       Zone?      @relation(fields: [zoneId], references: [id])
+  customerId String?    @map("customer_id")
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  approvedBy String?    @map("approved_by")
+  approved   User?      @relation(fields: [approvedBy], references: [id])
+  approvedAt DateTime?  @map("approved_at")
+
+  createdAt DateTime  @default(now()) @map("created_At")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("transactions")
 }
 
-model Payment {
-  id            Int         @id @default(autoincrement())
-  date          DateTime? // วันที่ชำระ
-  imgSlip       String
-  amount        Int? // จำนวนเงินที่ชำระ
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
-  transactionId Int
-  status        Status?
-  user          User?       @relation(fields: [userId], references: [id])
-  userId        String?
-  approveby     String?
-  createAt      DateTime    @default(now())
-  updateAt      DateTime    @updatedAt
+enum BillStatus {
+  WAITING
+  PAY
 }
 
-enum Role {
+enum RoleUser {
   ADMIN
   USER
-  CUSTOMER
+}
+
+enum StatueUser {
+  PENDING
+  REJECT
+  SUCCESS
 }
 
 enum TypeTransaction {
@@ -138,13 +145,8 @@ enum TypeTransaction {
   E
 }
 
-enum Status {
+enum StatusPayment {
   PENDING
   REJECT
   SUCCESS
-}
-
-enum EnumActive {
-  Y
-  N
 }

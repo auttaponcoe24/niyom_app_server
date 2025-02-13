@@ -15,9 +15,10 @@ import z from 'zod';
 // });
 export const createCustomerSchema = z.object({
   prefixId: z.number().min(1),
+  no: z.number().min(1),
   firstName: z.string().min(1),
   lastName: z.string().optional(),
-  cardId: z.string().length(13, 'Card ID must be exactly 13 characters long'),
+  cardId: z.string().length(13, 'Card ID must be exactly 13 characters long').optional(),
   phoneNumber: z.string().max(10).optional(),
   houseNumber: z.string().optional(),
   address: z.string().optional(),
@@ -39,7 +40,8 @@ export const createCustomerSchema = z.object({
 // });
 export const updateCustomerSchema = z.object({
   id: z.string().min(1),
-  cardId: z.string().length(13, 'Card ID must be exactly 13 characters long'),
+  no: z.number().min(1),
+  cardId: z.string().length(13, 'Card ID must be exactly 13 characters long').optional(),
   firstName: z.string().min(1).optional(),
   lastName: z.string().optional(),
   phoneNumber: z.string().max(10).optional(),

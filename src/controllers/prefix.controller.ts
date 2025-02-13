@@ -26,7 +26,7 @@ export const createPrefix = async (req: Request, res: Response, next: NextFuncti
 
 export const getAllPrefix = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { start, page_size, keywords } = req.query as { start: string; page_size: string; keywords: string };
+    const { start, pageSize, keywords } = req.query as { start: string; pageSize: string; keywords: string };
 
     const wherePrefin = {
       prefixName: {
@@ -35,8 +35,8 @@ export const getAllPrefix = async (req: Request, res: Response, next: NextFuncti
     };
 
     const prefixAll = await prisma.prefix.findMany({
-      take: Number(page_size),
-      skip: (Number(start) - 1) * Number(page_size),
+      take: Number(pageSize),
+      skip: (Number(start) - 1) * Number(pageSize),
       where: wherePrefin,
     });
 

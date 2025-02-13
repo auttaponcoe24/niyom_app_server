@@ -1,10 +1,9 @@
 import * as z from 'zod';
 export const getAllUnitSchema = z.object({
   start: z.string().min(1),
-  page_size: z.string().min(1),
+  pageSize: z.string().min(1),
   keywords: z.string().optional(),
-  // month: z.string().min(1),
-  // year: z.string().min(1),
+  customerId: z.string().optional(),
   date: z.string().min(1),
   zoneId: z.string().min(1),
   type: z.enum(['W', 'E'], {
@@ -15,8 +14,6 @@ export const getAllUnitSchema = z.object({
 export const updateOrCreateUnitSchema = z.object({
   id: z.number(),
   date: z.string(),
-  month: z.string().min(1, 'Month is required'),
-  year: z.string().min(1, 'Year is required'),
   type: z.enum(['W', 'E'], {
     message: 'Type must be either W or E',
   }),

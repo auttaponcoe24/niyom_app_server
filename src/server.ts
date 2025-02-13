@@ -24,7 +24,6 @@ import transactionRoute from '@/routes/transaction.route';
 import unitRoute from '@/routes/unit.route';
 import prefixRoute from '@/routes/prefix.route';
 import reportRoute from '@/routes/report.route';
-import paymentRoute from '@/routes/payment.route';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(buddhistEra);
@@ -37,7 +36,16 @@ dayjs.locale('th');
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    origin: process.env.ENABLE_CORS_DOMAIN?.split(','),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // อนุญาต HTTP methods
+    allowedHeaders: 'Content-Type, Authorization, Accept-Language, referrer-policy', // เพิ่ม referrer-policy
+    credentials: true, // อนุญาตให้ส่ง Cookie มาด้วย
+    preflightContinue: false, // ป้องกันไม่ให้ preflight request ถูกส่งออกไปที่เซิร์ฟเวอร์อื่น
+  }),
+);
 app.use(morgan('dev'));
 
 app.use(express.json());
@@ -49,20 +57,19 @@ app.use('/public', express.static(path.join(__dirname, '../public')));
 
 app.get('/', async (req: Request, res: Response) => {
   const test: string = 'Hello world';
-  res.json({ message: test });
+  res.status(200).json({ message: test });
 });
 
-app.use('/zone', zoneRoute);
-app.use('/prefix', prefixRoute);
-app.use('/auth', authRoute);
-app.use('/customer', customerRoute);
-app.use('/unit', unitRoute);
-app.use('/transaction', transactionRoute);
-app.use('/payment', paymentRoute);
-app.use('/report', reportRoute);
+app.use('/api/auth', authRoute);
+app.use('/api/zone', zoneRoute);
+app.use('/api/prefix', prefixRoute);
+app.use('/api/customer', customerRoute);
+app.use('/api/unit', unitRoute);
+app.use('/api/transaction', transactionRoute);
+app.use('/api/report', reportRoute);
 
 app.use(notFoundMiddlewares);
 app.use(errorMiddlewares);
 
-const PORT = process.env.PORT || '3000';
+const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => console.log(`Server is run on PORT: ${PORT}`));

@@ -92,9 +92,8 @@ export const transactionReport = async (req: Request, res: Response, next: NextF
             unitUsed: true,
             amount: true,
             overDue: true,
-            totalPrice: true,
+            total: true,
             status: true,
-            payment: true,
           },
         },
       },
@@ -124,7 +123,7 @@ export const transactionReport = async (req: Request, res: Response, next: NextF
 
     // res.send(htmlContent);
 
-    return await reportsService.generateStreamPdfOrXcel(reportType as 'html' | 'pdf' | 'excel', `${reportData.name}`, htmlContent, res);
+    await reportsService.generateStreamPdfOrXcel(reportType as 'html' | 'pdf' | 'excel', `${reportData.name}`, htmlContent, res);
   } catch (error) {
     throw error;
   }

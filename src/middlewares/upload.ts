@@ -1,14 +1,12 @@
 import multer, { StorageEngine } from 'multer';
 import { Request } from 'express';
 
-// กำหนด StorageEngine ด้วย Multer
 const storage: StorageEngine = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+  destination: (req: Request, file, cb) => {
     const { folder } = req.params as { folder: string };
-    // console.log('folder', folder);
     cb(null, `public/images/${folder}`);
   },
-  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+  filename: (req: Request, file, cb) => {
     const extension = file.originalname.split('.').pop(); // ดึงนามสกุลไฟล์
     const uniqueName = `${Date.now()}${Math.round(Math.random() * 1_000_000)}.${extension}`;
     cb(null, uniqueName);
