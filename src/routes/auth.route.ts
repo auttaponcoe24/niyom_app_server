@@ -12,6 +12,6 @@ router.get('/profile', authMiddleware, getProfile);
 
 router.patch('/update/profile', authMiddleware, updateProfile);
 
-router.get('/getAll', authMiddleware, getUserAll);
+router.get('/get-all', authMiddleware, getUserAll);
 
 export default router;

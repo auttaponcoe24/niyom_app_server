@@ -17,7 +17,16 @@ import prefixRoute from '@/routes/prefix.route';
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    origin: process.env.ENABLE_CORS_DOMAIN?.split(','),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // อนุญาต HTTP methods
+    allowedHeaders: 'Content-Type, Authorization, Accept-Language, referrer-policy', // เพิ่ม referrer-policy
+    credentials: true, // อนุญาตให้ส่ง Cookie มาด้วย
+    preflightContinue: false, // ป้องกันไม่ให้ preflight request ถูกส่งออกไปที่เซิร์ฟเวอร์อื่น
+  }),
+);
 app.use(morgan('dev'));
 
 app.use(express.json());
