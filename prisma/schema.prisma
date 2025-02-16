@@ -51,24 +51,26 @@ model User {
 }
 
 model Customer {
-  id           String        @id @default(uuid())
-  no           Int?
-  firstName    String?       @map("first_name")
-  lastName     String?       @map("last_name")
-  cardId       String?       @unique @map("card_id") @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
-  phoneNumber  String?       @map("phone_number")
-  houseNumber  String?       @map("house_number")
-  address      String?
-  isActive     Boolean       @default(true)
-  prefixId     Int?          @map("prefix_id")
-  prefix       Prefix?       @relation(fields: [prefixId], references: [id])
-  zoneId       Int?          @map("zone_id")
-  zone         Zone?         @relation(fields: [zoneId], references: [id])
-  createdAt    DateTime      @default(now()) @map("created_At")
-  updatedAt    DateTime?     @updatedAt @map("updated_at")
-  units        Unit[]
-  transactions Transaction[]
-  user         User? // One-to-One relation with User
+  id                String        @id @default(uuid())
+  no                Int?
+  firstName         String?       @map("first_name")
+  lastName          String?       @map("last_name")
+  cardId            String?       @unique @map("card_id") @db.VarChar(13) // กำหนดไม่เกิน 13 ตัว
+  phoneNumber       String?       @map("phone_number")
+  houseNumber       String?       @map("house_number")
+  address           String?
+  isActive          Boolean       @default(true)
+  prefixId          Int?          @map("prefix_id")
+  prefix            Prefix?       @relation(fields: [prefixId], references: [id])
+  zoneId            Int?          @map("zone_id")
+  zone              Zone?         @relation(fields: [zoneId], references: [id])
+  isServiceWater    Boolean       @default(false) @map("is_service_water")
+  isServiceElectric Boolean       @default(false) @map("is_service_electric")
+  createdAt         DateTime      @default(now()) @map("created_At")
+  updatedAt         DateTime?     @updatedAt @map("updated_at")
+  units             Unit[]
+  transactions      Transaction[]
+  user              User? // One-to-One relation with User
 
   @@map("customers")
 }

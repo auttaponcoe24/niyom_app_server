@@ -25,7 +25,10 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
         .format('YYYY-MM-DD'), // แปลงเป็นรูปแบบ 'YYYY-MM-DD'
     );
 
+    const whereType = data.type === 'W' ? { isServiceWater: true } : data.type === 'E' ? { isServiceElectric: true } : '';
+
     const whereCustomer = {
+      ...whereType,
       zoneId: +data.zoneId,
       id: {
         contains: String(data.customerId),

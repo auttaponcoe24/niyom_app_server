@@ -22,17 +22,36 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
       cardId?: string;
       phoneNumber?: string;
       houseNumber?: string;
+      isServiceWater: boolean;
+      isServiceElectric: boolean;
       address?: string;
       zoneId?: number;
     };
 
     if (role !== 'ADMIN') {
-      return next(createError('User is not admin', 401));
+      return next(createError('User is not admin', 500));
     }
+
+    const checkCardId = data.cardId
+      ? {
+          ...data,
+        }
+      : {
+          no: data.no,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: data.phoneNumber,
+          houseNumber: data.houseNumber,
+          address: data.address,
+          isServiceWater: data.isServiceWater,
+          isServiceElectric: data.isServiceElectric,
+          prefixId: data.prefixId,
+          zoneId: data.zoneId,
+        };
 
     const customer = await prisma.customer.create({
       data: {
-        ...data,
+        ...checkCardId,
       },
     });
 
@@ -90,14 +109,19 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
             contains: keywords,
           },
         },
+        {
+          id: {
+            contains: keywords,
+          },
+        },
       ],
-      zoneId: +zoneId,
+      zoneId: zoneId ? +zoneId : {},
     };
     const result = await prisma.customer.findMany({
       skip: (Number(start) - 1) * Number(pageSize),
       take: Number(pageSize),
       where: { ...whereCustomer },
-      orderBy: { no: 'asc' },
+      orderBy: [{ zoneId: 'asc' }, { no: 'asc' }],
       select: {
         id: true,
         no: true,
@@ -108,6 +132,8 @@ export const getAllCustomer = async (req: Request, res: Response, next: NextFunc
         houseNumber: true,
         address: true,
         isActive: true,
+        isServiceWater: true,
+        isServiceElectric: true,
         zone: {
           select: {
             id: true,
@@ -151,6 +177,8 @@ export const getByIdCustomer = async (req: Request, res: Response, next: NextFun
         houseNumber: true,
         address: true,
         isActive: true,
+        isServiceWater: true,
+        isServiceElectric: true,
         zone: {
           select: {
             id: true,
@@ -191,6 +219,9 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
       phoneNumber?: string;
       houseNumber?: string;
       address?: string;
+      isActive: boolean;
+      isServiceWater: boolean;
+      isServiceElectric: boolean;
       prefixId?: number;
       zoneId?: number;
     };
@@ -221,6 +252,9 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
           phoneNumber: data.phoneNumber,
           houseNumber: data.houseNumber,
           address: data.address,
+          isActive: data.isActive,
+          isServiceWater: data.isServiceWater,
+          isServiceElectric: data.isServiceElectric,
           prefixId: data.prefixId,
           zoneId: data.zoneId,
         };

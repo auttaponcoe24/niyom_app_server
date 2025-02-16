@@ -10,6 +10,8 @@ export const getAllUnit = async (req: Request, res: Response, next: NextFunction
 
     if (error) return next(createError(error.message, 400));
 
+    const whereType = data.type === 'W' ? { isServiceWater: true } : data.type === 'E' ? { isServiceElectric: true } : '';
+
     const whereCustomer = {
       AND: [
         { zoneId: +data.zoneId },
@@ -17,6 +19,7 @@ export const getAllUnit = async (req: Request, res: Response, next: NextFunction
         {
           OR: [{ firstName: { contains: data.keywords } }, { lastName: { contains: data.keywords } }],
         },
+        { ...whereType },
       ],
     };
     const customer = await prisma.customer.findMany({
@@ -30,6 +33,8 @@ export const getAllUnit = async (req: Request, res: Response, next: NextFunction
         lastName: true,
         houseNumber: true,
         isActive: true,
+        isServiceWater: true,
+        isServiceElectric: true,
         prefix: {
           select: {
             id: true,
@@ -45,7 +50,7 @@ export const getAllUnit = async (req: Request, res: Response, next: NextFunction
         units: {
           where: {
             date: new Date(dayjs(data.date).format('YYYY-MM-DD')),
-            // type: data.type,
+            type: data.type,
           },
           select: {
             id: true,

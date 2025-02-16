@@ -4,20 +4,38 @@ import { NextFunction, Request, Response } from 'express';
 
 export const createPrefix = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { prefixName } = req.body as { prefixName: string };
+    const body = req.body as { prefixName: string; id: number };
     const { role } = req.user.data;
 
     if (role !== 'ADMIN') {
       return next(createError('User is not admin', 401));
     }
 
-    const prefix = await prisma.prefix.create({
-      data: {
-        prefixName,
-      },
-    });
+    if (body.id !== 0) {
+      const prefix = await prisma.prefix.findUnique({
+        where: {
+          id: body.id,
+        },
+      });
 
-    res.status(201).json({ message: 'Create prefix successfully', data: prefix });
+      if (!prefix) return next(createError(`PrefixId ${body.id} is not found`, 500));
+      const update = await prisma.prefix.update({
+        where: {
+          id: body.id,
+        },
+        data: {
+          prefixName: body.prefixName,
+        },
+      });
+      res.status(201).json({ message: 'Update prefix successfully', data: update });
+    } else {
+      const prefix = await prisma.prefix.create({
+        data: {
+          prefixName: body.prefixName,
+        },
+      });
+      res.status(201).json({ message: 'Create prefix successfully', data: prefix });
+    }
   } catch (error) {
     console.error(error);
     return next(error);
