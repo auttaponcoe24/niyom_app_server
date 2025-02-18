@@ -102,12 +102,12 @@ export const getAllUnit = async (req: Request, res: Response, next: NextFunction
             // display
             no: cus.no,
             prefix: cus.prefix.prefixName ? cus.prefix.prefixName : '-',
-            fullname: `${cus.firstName}  ${cus.lastName}`,
+            fullName: `${cus.firstName}  ${cus.lastName}`,
             houseNumber: cus.houseNumber,
           };
     });
 
-    res.json({ message: 'ok', data: result, total_record });
+    res.json({ status: true, message: 'ok', data: result, total_record });
   } catch (error) {
     console.error(error);
     return next(error);

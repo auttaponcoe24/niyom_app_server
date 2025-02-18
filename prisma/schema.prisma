@@ -109,8 +109,9 @@ model Transaction {
   unitUsed   Int?       @map("unit_used") // หน่วยน้ำที่ใช้
   amount     Int? // จำนวนค่าน้ำที่คิดจากหน่วย
   overDue    Int?       @map("over_due") // ยอดค้าง
-  pay        Int?
   total      Int?       @map("total")
+  pay        Int?
+  remain     Int?
   status     BillStatus @default(WAITING)
   zoneId     Int?       @map("zone_id")
   zone       Zone?      @relation(fields: [zoneId], references: [id])

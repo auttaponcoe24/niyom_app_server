@@ -83,7 +83,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
             type: true,
             unitNumber: true,
           },
-          orderBy: [{ date: 'asc' }], // เรียงวันน้อยก่อน หรือเดือนก่อนขึ้นก่อน
+          orderBy: [{ date: 'desc' }],
         },
         transactions: {
           where: {
@@ -111,8 +111,9 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
             unitUsed: true,
             amount: true,
             overDue: true,
-            pay: true,
             total: true,
+            pay: true,
+            remain: true,
             status: true,
             customerId: true,
             zoneId: true,
@@ -144,53 +145,105 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
       },
     });
 
-    const result = customers.map((cus, index: number) => {
-      // สูตรค่าน้ำ unitUsed * 16 + 50 และ ค่าไฟ unitUsed * 7 + 50 * 0.07
-      const unitOldNumber = cus?.units[0]?.unitNumber;
-      const unitNewNumber = cus?.units[1]?.unitNumber;
-      const unitUsed = unitNewNumber - unitOldNumber;
-      // const unitUsed = cus?.units[1]?.unitNumber;
+    // const units = await prisma.unit.findMany({
+    //   where: {
+    //     date: currentDate, // ใช้ currentDate เป็นตัวกำหนดวันที่
+    //   },
+    //   include: {
+    //     customer: true, // รวมข้อมูลลูกค้าด้วย
+    //     zone: true, // รวมข้อมูลโซน
+    //   },
+    // });
+    const units = await prisma.unit.findMany({
+      where: {
+        date: {
+          in: [currentDate, beforeDate],
+        },
+      },
+      include: {
+        customer: true,
+      },
+    });
 
-      const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
+    const result = customers.map((cus, index: number) => {
+      // const unitNewNumber = cus?.units[0]?.unitNumber || 0; // กำหนดค่าเป็น 0 ถ้าไม่มีค่า
+      // const unitOldNumber = cus?.units[1]?.unitNumber || 0;
+      // const unitUsed = unitNewNumber - unitOldNumber;
+
+      // const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
 
       const tranEmpBefore = findTransactionBefore.find(item => item.customerId === cus.id);
+      // หาข้อมูล unit ของลูกค้าคนนั้น ๆ ตามวันที่ปัจจุบัน
+      // const unitNew = units.find(unit => unit.customerId === cus.id);
+      // // หาข้อมูล unit ของเดือนก่อน
+      // const unitOld = units.find(unit => unit.customerId === cus.id && unit.date < currentDate);
+
+      // const unitNewNumber = unitNew?.unitNumber || 0;
+      // const unitOldNumber = unitOld?.unitNumber || 0;
+      // const unitUsed = unitNewNumber - unitOldNumber;
+
+      // const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
+
+      const unitNew = units.find(unit => unit.customerId === cus.id && unit.date.getTime() === currentDate.getTime());
+      const unitOld = units.find(unit => unit.customerId === cus.id && unit.date.getTime() === beforeDate.getTime());
+
+      // console.log('new', unitNew);
+      // console.log('old', unitOld);
+
+      const unitNewNumber = unitNew?.unitNumber || 0;
+      const unitOldNumber = unitOld?.unitNumber || 0;
+      const unitUsed = unitNewNumber - unitOldNumber;
+
+      const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
 
       return cus.transactions.length === 0
         ? {
             id: 0,
             date: currentDate,
             type: data.type,
-            unitOldId: cus?.units[0] ? cus?.units[0]?.id : null,
-            unitOld: cus?.units[0]
+            unitNewId: unitNew?.id ? unitNew.id : null,
+            unitNew: unitNew
               ? {
-                  id: cus?.units[0]?.id,
-                  date: cus?.units[0]?.date,
-                  unitNumber: cus?.units[0]?.unitNumber,
+                  id: unitNew.id,
+                  date: unitNew.date,
+                  type: unitNew.type,
+                  unitNumber: unitNew.unitNumber,
+                  customerId: unitNew.customerId,
+                  zoneId: unitNew.zoneId,
                 }
               : {
-                  id: null,
-                  date: dayjs(beforeDate).format('YYYY-MM-DD'),
-                  unitNumber: `ไม่มีหน่วย ณ ${dayjs(beforeDate).format('MM/YYYY')}`,
+                  id: 0,
+                  date: dayjs(currentDate).format('YYYY-MM-DD'),
+                  type: data.type,
+                  unitNumber: null,
+                  customerId: cus?.id,
+                  zoneId: data.zoneId,
                 },
-            unitNewId: cus?.units[1] ? cus?.units[1]?.id : null,
-            unitNew: cus?.units[1]
+            unitOldId: unitOld?.id ? unitOld.id : null,
+            unitOld: unitOld
               ? {
-                  id: cus?.units[1]?.id,
-                  date: cus?.units[1]?.date,
-                  unitNumber: cus?.units[1].unitNumber,
+                  id: unitOld.id,
+                  date: unitOld.date,
+                  type: unitOld.type,
+                  unitNumber: unitOld.unitNumber,
+                  customerId: unitOld.id,
+                  zoneId: unitOld.zoneId,
                 }
               : {
-                  id: null,
-                  date: dayjs(currentDate).format('MM/YYYY'),
-                  unitNumber: `ไม่มีหน่วย ณ ${dayjs(currentDate).format('MM/YYYY')}`,
+                  id: 0,
+                  date: dayjs(beforeDate).format('YYYY-MM-DD'),
+                  type: data.type,
+                  unitNumber: null,
+                  customerId: cus?.id,
+                  zoneId: data.zoneId,
                 },
 
             unitUsed,
             amount,
-            overDue: tranEmpBefore ? tranEmpBefore?.total : 0,
+            overDue: tranEmpBefore ? tranEmpBefore?.remain + 50 : 0, // คงเหลือเดือนที่แล้ว + 50
+            total: tranEmpBefore ? tranEmpBefore?.remain + 50 + amount : amount,
             pay: 0,
-            total: tranEmpBefore ? tranEmpBefore?.total + amount : amount,
-            // status: cus?.transactions[0]?.status,
+            remain: 0,
             status: 'WAINING',
             customerId: cus.id,
             zoneId: cus.zone.id,
@@ -199,63 +252,358 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
 
             no: cus.no,
             prefix: cus.prefix.prefixName ? cus.prefix.prefixName : '-',
-            fullname: `${cus.firstName}  ${cus.lastName}`,
+            fullName: `${cus.firstName} ${cus.lastName}`,
             houseNumber: cus.houseNumber,
             zoneName: cus.zone.zoneName,
           }
         : {
-            // ...cus,
             id: cus.transactions[0].id,
             date: cus.transactions[0].date ? dayjs(cus.transactions[0].date).format('YYYY-MM-DD') : null,
             type: cus.transactions[0].type,
-            unitOldId: cus?.transactions[0]?.unitOld?.id,
-            unitOld: cus?.transactions[0]?.unitOld
-              ? {
-                  id: cus.transactions[0].unitOld.id,
-                  date: cus.transactions[0].unitOld.date,
-                  unitNumber: cus.transactions[0].unitOld.unitNumber,
-                }
-              : null,
             unitNewId: cus.transactions[0]?.unitNew.id,
             unitNew: cus?.transactions[0]?.unitNew
               ? {
                   id: cus.transactions[0].unitNew.id,
                   date: cus.transactions[0].unitNew.date,
+                  type: cus?.transactions[0].type,
                   unitNumber: cus.transactions[0].unitNew.unitNumber,
+                  customerId: cus?.id,
+                  zoneId: cus?.zone?.id,
                 }
-              : null,
-
+              : {
+                  id: 0,
+                  date: dayjs(currentDate).format('YYYY-MM-DD'),
+                  type: cus?.units[0]?.type,
+                  unitNumber: cus?.units[0]?.unitNumber,
+                  customerId: cus?.id,
+                  zoneId: cus?.zone?.id,
+                },
+            unitOldId: cus?.transactions[0]?.unitOld?.id, // แก้ไขตรงนี้
+            unitOld: cus?.transactions[0]?.unitOld
+              ? {
+                  id: cus?.transactions[0]?.unitOld.id,
+                  date: cus?.transactions[0]?.unitOld.date,
+                  type: cus?.transactions[0]?.type,
+                  unitNumber: cus?.transactions[0]?.unitOld?.unitNumber,
+                  customerId: cus?.id,
+                  zoneId: cus?.zone?.id,
+                }
+              : {
+                  id: 0,
+                  date: dayjs(beforeDate).format('YYYY-MM-DD'),
+                  type: cus?.transactions[0]?.type,
+                  unitNumber: cus?.units[1]?.unitNumber,
+                  customerId: cus?.id,
+                  zoneId: cus?.zone?.id,
+                },
             unitUsed: cus.transactions[0].unitUsed,
             amount: cus.transactions[0].amount,
             overDue: cus.transactions[0].overDue,
-            pay: cus.transactions[0].pay,
             total: cus.transactions[0].total,
+            pay: cus.transactions[0].pay,
+            remain: cus.transactions[0].remain,
             status: cus.transactions[0].status,
             customerId: cus.id,
             zoneId: cus.zone.id,
-            approved: cus.transactions[0].approved
-              ? {
-                  id: cus.transactions[0].approved.id,
-                  firstName: cus.transactions[0].approved.firstName,
-                  lastName: cus.transactions[0].approved.lastName,
-                }
-              : null,
-            approvedAt: cus.transactions[0].approvedAt ? dayjs(cus.transactions[0].approvedAt).format('YYYY-MM-DD') : null,
-
+            approved: cus.transactions[0].approved,
+            approvedAt: cus.transactions[0].approvedAt,
             no: cus.no,
             prefix: cus.prefix.prefixName ? cus.prefix.prefixName : '-',
-            fullname: `${cus.firstName}  ${cus.lastName}`,
+            fullName: `${cus.firstName} ${cus.lastName}`,
             houseNumber: cus.houseNumber,
             zoneName: cus.zone.zoneName,
           };
     });
 
     res.status(200).json({ status: true, message: 'ok', data: result, total_record });
-  } catch (error) {
-    console.error(error);
-    return next(error);
+  } catch (error: any) {
+    next(error);
   }
 };
+// export const getAllTransaction = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const { role } = req.user.data;
+//     const { data, error } = getAllTransactionSchema.safeParse(req.query);
+
+//     if (error) {
+//       return next(createError(error.message, 404));
+//     }
+
+//     if (role !== 'ADMIN') {
+//       return next(createError('Is Not Admin', 404));
+//     }
+
+//     const currentDate = new Date(dayjs(data.date, 'YYYY-MM-DD').startOf('month').format('YYYY-MM-DD'));
+//     const beforeDate = new Date(
+//       dayjs(data.date, 'YYYY-MM-DD')
+//         .startOf('month') // ไปที่วันที่ 1 ของเดือน
+//         .subtract(1, 'month') // เลื่อนเดือนก่อนหน้า
+//         .format('YYYY-MM-DD'), // แปลงเป็นรูปแบบ 'YYYY-MM-DD'
+//     );
+
+//     const whereType = data.type === 'W' ? { isServiceWater: true } : data.type === 'E' ? { isServiceElectric: true } : '';
+
+//     const whereCustomer = {
+//       ...whereType,
+//       zoneId: +data.zoneId,
+//       id: {
+//         contains: String(data.customerId),
+//       },
+//       OR: [
+//         {
+//           firstName: {
+//             contains: String(data.keywords),
+//           },
+//         },
+//         {
+//           lastName: {
+//             contains: String(data.keywords),
+//           },
+//         },
+//       ],
+//     };
+
+//     const customers = await prisma.customer.findMany({
+//       take: +data.pageSize,
+//       skip: (+data.start - 1) * +data.pageSize,
+//       where: { ...whereCustomer },
+//       select: {
+//         id: true,
+//         no: true,
+//         firstName: true,
+//         lastName: true,
+//         houseNumber: true,
+//         prefix: {
+//           select: {
+//             id: true,
+//             prefixName: true,
+//           },
+//         },
+//         zone: {
+//           select: {
+//             id: true,
+//             zoneName: true,
+//           },
+//         },
+//         units: {
+//           where: {
+//             date: {
+//               gte: beforeDate,
+//               lte: currentDate,
+//             },
+//             type: data.type,
+//           },
+//           select: {
+//             id: true,
+//             date: true,
+//             type: true,
+//             unitNumber: true,
+//           },
+//           orderBy: [{ date: 'asc' }], // เรียงวันน้อยก่อน หรือเดือนก่อนขึ้นก่อน
+//         },
+//         transactions: {
+//           where: {
+//             date: currentDate,
+//             type: data.type,
+//           },
+//           select: {
+//             id: true,
+//             date: true,
+//             type: true,
+//             unitOld: {
+//               select: {
+//                 id: true,
+//                 date: true,
+//                 unitNumber: true,
+//               },
+//             },
+//             unitNew: {
+//               select: {
+//                 id: true,
+//                 date: true,
+//                 unitNumber: true,
+//               },
+//             },
+//             unitUsed: true,
+//             amount: true,
+//             overDue: true,
+//             total: true,
+//             pay: true,
+//             remain: true,
+//             status: true,
+//             customerId: true,
+//             zoneId: true,
+//             approved: {
+//               select: {
+//                 id: true,
+//                 firstName: true,
+//                 lastName: true,
+//               },
+//             },
+//             approvedAt: true,
+//           },
+//           orderBy: [{ id: 'desc' }],
+//         },
+//       },
+//       orderBy: { no: 'asc' },
+//     });
+
+//     const total_record = await prisma.customer.count({
+//       where: whereCustomer,
+//     });
+
+//     const findTransactionBefore = await prisma.transaction.findMany({
+//       where: {
+//         date: {
+//           lte: beforeDate,
+//         },
+//         type: data.type,
+//       },
+//     });
+
+//     const result = customers.map((cus, index: number) => {
+//       // const unitOldNumber = cus?.units[0]?.unitNumber;
+//       // const unitNewNumber = cus?.units[1]?.unitNumber;
+//       // const unitUsed = unitNewNumber - unitOldNumber;
+//       const unitOldNumber = cus?.units[0]?.unitNumber || 0; // กำหนดค่าเป็น 0 ถ้าไม่มีค่า
+//       const unitNewNumber = cus?.units[1]?.unitNumber || 0;
+//       const unitUsed = unitNewNumber - unitOldNumber;
+
+//       const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
+
+//       const tranEmpBefore = findTransactionBefore.find(item => item.customerId === cus.id);
+
+//       return cus.transactions.length === 0
+//         ? {
+//             id: 0,
+//             date: currentDate,
+//             type: data.type,
+//             unitNewId: cus?.units[1] ? cus?.units[0]?.id : null,
+//             unitNew: cus?.units[1]
+//               ? {
+//                   id: cus?.units[1]?.id,
+//                   date: cus?.units[1]?.date,
+//                   type: cus?.units[1]?.type,
+//                   unitNumber: cus?.units[1]?.unitNumber,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 }
+//               : {
+//                   id: 0,
+//                   date: dayjs(currentDate).format('YYYY-MM-DD'),
+//                   type: cus?.units[0]?.type,
+//                   unitNumber: null,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 },
+//             unitOldId: cus?.units[0] ? cus?.units[0]?.id : null, // แก้ไขตรงนี้
+//             unitOld: cus?.units[0]
+//               ? {
+//                   id: cus?.units[0]?.id,
+//                   date: cus?.units[0]?.date,
+//                   type: cus?.units[0]?.type,
+//                   unitNumber: cus?.units[0].unitNumber,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 }
+//               : {
+//                   id: 0,
+//                   date: dayjs(beforeDate).format('YYYY-MM-DD'),
+//                   type: cus?.units[1]?.type,
+//                   unitNumber: null,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 },
+
+//             unitUsed,
+//             amount,
+//             overDue: tranEmpBefore ? tranEmpBefore?.remain + 50 : 0, // คงเหลือเดือนที่แล้ว + 50
+//             total: tranEmpBefore ? tranEmpBefore?.remain + 50 + amount : amount,
+//             pay: 0,
+//             remain: 0,
+//             status: 'WAINING',
+//             customerId: cus.id,
+//             zoneId: cus.zone.id,
+//             approved: null,
+//             approvedAt: null,
+
+//             no: cus.no,
+//             prefix: cus.prefix.prefixName ? cus.prefix.prefixName : '-',
+//             fullName: `${cus.firstName} ${cus.lastName}`,
+//             houseNumber: cus.houseNumber,
+//             zoneName: cus.zone.zoneName,
+//           }
+//         : {
+//             id: cus.transactions[0].id,
+//             date: cus.transactions[0].date ? dayjs(cus.transactions[0].date).format('YYYY-MM-DD') : null,
+//             type: cus.transactions[0].type,
+//             unitNewId: cus.transactions[0]?.unitNew.id,
+//             unitNew: cus?.transactions[0]?.unitNew
+//               ? {
+//                   id: cus.transactions[0].unitNew.id,
+//                   date: cus.transactions[0].unitNew.date,
+//                   type: cus?.transactions[0].type,
+//                   unitNumber: cus.transactions[0].unitNew.unitNumber,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 }
+//               : {
+//                   id: 0,
+//                   date: dayjs(currentDate).format('YYYY-MM-DD'),
+//                   type: cus?.units[1]?.type,
+//                   unitNumber: null,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 },
+//             unitOldId: cus?.transactions[0]?.unitOld?.id, // แก้ไขตรงนี้
+//             unitOld: cus?.transactions[0]?.unitOld
+//               ? {
+//                   id: cus?.transactions[0]?.unitOld.id,
+//                   date: cus?.transactions[0]?.unitOld.date,
+//                   type: cus?.transactions[0]?.type,
+//                   unitNumber: cus?.transactions[0]?.unitOld?.unitNumber,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 }
+//               : {
+//                   id: 0,
+//                   date: dayjs(beforeDate).format('YYYY-MM-DD'),
+//                   type: cus?.transactions[0]?.type,
+//                   unitNumber: null,
+//                   customerId: cus?.id,
+//                   zoneId: cus?.zone?.id,
+//                 },
+//             unitUsed: cus.transactions[0].unitUsed,
+//             amount: cus.transactions[0].amount,
+//             overDue: cus.transactions[0].overDue,
+//             total: cus.transactions[0].total,
+//             pay: cus.transactions[0].pay,
+//             remain: cus.transactions[0].remain,
+//             status: cus.transactions[0].status,
+//             customerId: cus.id,
+//             zoneId: cus.zone.id,
+//             approved: cus.transactions[0].approved,
+//             approvedAt: cus.transactions[0].approvedAt,
+//             no: cus.no,
+//             prefix: cus.prefix.prefixName ? cus.prefix.prefixName : '-',
+//             fullName: `${cus.firstName} ${cus.lastName}`,
+//             houseNumber: cus.houseNumber,
+//             zoneName: cus.zone.zoneName,
+//           };
+//     });
+
+//     // res.status(200).json({
+//     //   status: 'success',
+//     //   data: result,
+//     //   page: +data.page,
+//     //   total_page: Math.ceil(total_record / +data.pageSize),
+//     //   total_record,
+//     // });
+//     res.status(200).json({ status: true, message: 'ok', data: result, total_record });
+//   } catch (error: any) {
+//     next(error);
+//   }
+// };
 
 export const updateOrCreateTransaction = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -283,8 +631,9 @@ export const updateOrCreateTransaction = async (req: Request, res: Response, nex
             unitUsed: transaction.unitUsed,
             amount: transaction.amount,
             overDue: transaction.overDue,
-            pay: transaction.pay,
             total: transaction.total,
+            pay: transaction.pay,
+            remain: transaction.remain,
             status: transaction.status,
             customerId: transaction.customerId,
             zoneId: transaction.zoneId,
@@ -300,8 +649,9 @@ export const updateOrCreateTransaction = async (req: Request, res: Response, nex
             unitUsed: transaction.unitUsed,
             amount: transaction.amount,
             overDue: transaction.overDue,
-            pay: transaction.pay,
             total: transaction.total,
+            pay: transaction.pay,
+            remain: transaction.remain,
             status: transaction.status,
             customerId: transaction.customerId,
             zoneId: transaction.zoneId,
@@ -357,6 +707,7 @@ export const getByIdTransaction = async (req: Request, res: Response, next: Next
         amount: true,
         overDue: true,
         pay: true,
+        remain: true,
         total: true,
         status: true,
         customer: {
@@ -411,7 +762,7 @@ export const payTransaction = async (req: Request, res: Response, next: NextFunc
       },
       data: {
         pay: +query.pay,
-        total: transaction.total - +query.pay,
+        remain: transaction.total - +query.pay,
         status: 'PAY',
         approvedBy: id,
         approvedAt: new Date(dayjs().format('YYYY-MM-DD')),
