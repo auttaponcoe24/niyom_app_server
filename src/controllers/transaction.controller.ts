@@ -166,23 +166,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
     });
 
     const result = customers.map((cus, index: number) => {
-      // const unitNewNumber = cus?.units[0]?.unitNumber || 0; // กำหนดค่าเป็น 0 ถ้าไม่มีค่า
-      // const unitOldNumber = cus?.units[1]?.unitNumber || 0;
-      // const unitUsed = unitNewNumber - unitOldNumber;
-
-      // const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
-
       const tranEmpBefore = findTransactionBefore.find(item => item.customerId === cus.id);
-      // หาข้อมูล unit ของลูกค้าคนนั้น ๆ ตามวันที่ปัจจุบัน
-      // const unitNew = units.find(unit => unit.customerId === cus.id);
-      // // หาข้อมูล unit ของเดือนก่อน
-      // const unitOld = units.find(unit => unit.customerId === cus.id && unit.date < currentDate);
-
-      // const unitNewNumber = unitNew?.unitNumber || 0;
-      // const unitOldNumber = unitOld?.unitNumber || 0;
-      // const unitUsed = unitNewNumber - unitOldNumber;
-
-      // const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
 
       const unitNew = units.find(unit => unit.customerId === cus.id && unit.date.getTime() === currentDate.getTime());
       const unitOld = units.find(unit => unit.customerId === cus.id && unit.date.getTime() === beforeDate.getTime());
@@ -244,7 +228,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
             total: tranEmpBefore ? tranEmpBefore?.remain + 50 + amount : amount,
             pay: 0,
             remain: 0,
-            status: 'WAINING',
+            status: 'WAITING',
             customerId: cus.id,
             zoneId: cus.zone.id,
             approved: null,
@@ -521,7 +505,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
 //             total: tranEmpBefore ? tranEmpBefore?.remain + 50 + amount : amount,
 //             pay: 0,
 //             remain: 0,
-//             status: 'WAINING',
+//             status: 'WAITING',
 //             customerId: cus.id,
 //             zoneId: cus.zone.id,
 //             approved: null,
@@ -665,6 +649,60 @@ export const updateOrCreateTransaction = async (req: Request, res: Response, nex
     res.status(201).json({ status: true, message: 'ok', result: results });
   } catch (error) {
     console.error(error);
+    next(error);
+  }
+};
+
+export const updateById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user.data;
+
+    if (role !== 'ADMIN') return next(createError('user is not admin', 401));
+
+    const { transactionId } = req.params;
+    const update = req.body as {
+      unitNumberOld: number;
+      unitNumberNew: number;
+      unitUsed: number;
+      amount: number;
+      overDue: number;
+      total: number;
+    };
+
+    const transaction = await prisma.transaction.findUnique({
+      where: {
+        id: +transactionId,
+      },
+    });
+
+    if (!transaction) {
+      return next(createError('Transaction ID is required', 400));
+    }
+
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id: Number(transactionId) },
+      data: {
+        unitNew: {
+          update: {
+            unitNumber: update.unitNumberNew,
+          },
+        },
+        unitOld: {
+          update: {
+            unitNumber: update.unitNumberOld,
+          },
+        },
+        unitUsed: update.unitUsed,
+        amount: update.amount,
+        overDue: update.overDue,
+        total: update.total,
+      },
+    });
+
+    res.status(201).json(updatedTransaction);
+  } catch (error) {
+    console.error('Error updating transaction:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
     next(error);
   }
 };
