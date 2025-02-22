@@ -1,0 +1,37 @@
+# ใช้ Node.js 20
+FROM node:20-slim
+
+# ตั้งค่าพาธให้ Puppeteer ใช้ Chromium ที่ติดตั้งเอง
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# อัปเดตแพ็กเกจและติดตั้ง Chromium & Dependencies
+RUN apt-get update && apt-get install -y \
+  chromium \
+  libnss3 libatk1.0-0 libcups2 libx11-xcb1 \
+  libxcomposite1 libxcursor1 libxdamage1 libxi6 libxrandr2 \
+  libxss1 libxtst6 libasound2 fonts-liberation \
+  libappindicator3-1 libgtk-3-0 libgbm1 libpangocairo-1.0-0 \
+  libpango-1.0-0 libcairo2 libcairo-gobject2 libgdk-pixbuf2.0-0 \
+  libxshmfence1 unzip curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# กำหนด Working Directory
+WORKDIR /app
+
+# คัดลอก package.json และติดตั้ง dependencies
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+# คัดลอกโค้ดทั้งหมด
+COPY . .
+
+# สร้าง Prisma Client (ถ้ามี)
+RUN yarn prisma generate && yarn build:alias
+
+# เปิด Port 8080
+EXPOSE 8080
+
+# เริ่มรันแอป
+CMD ["yarn", "run", "start"]

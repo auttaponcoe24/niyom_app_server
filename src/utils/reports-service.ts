@@ -4,6 +4,7 @@ import * as ejs from 'ejs';
 import { Request, Response } from 'express';
 import { JSDOM } from 'jsdom';
 import puppeteer, { PDFOptions } from 'puppeteer';
+// import puppeteer, { PDFOptions } from 'puppeteer-core';
 import * as XLSX from 'xlsx';
 import { PDFDocument } from 'pdf-lib';
 
@@ -45,7 +46,6 @@ export class ReportsService {
 
   async generatePDF(fileName: string, htmlContent: string, PDFOptions?: PDFOptions) {
     const browser = await puppeteer.launch({
-      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=medium'],
       timeout: 60000,
@@ -74,7 +74,6 @@ export class ReportsService {
 
   async generatePDFStream(htmlContent: string, PDFOptions?: PDFOptions) {
     const browser = await puppeteer.launch({
-      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=medium'],
       timeout: 10 * 60 * 1000,
