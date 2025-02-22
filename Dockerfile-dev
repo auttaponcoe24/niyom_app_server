@@ -28,7 +28,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 # สร้าง Prisma Client (ถ้ามี)
-RUN yarn prisma generate && yarn build:alias
+RUN yarn prisma generate && yarn build
 
 # เปิด Port 8080
 EXPOSE 8080
