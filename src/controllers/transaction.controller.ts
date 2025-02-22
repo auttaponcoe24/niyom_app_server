@@ -98,6 +98,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
               select: {
                 id: true,
                 date: true,
+                type: true,
                 unitNumber: true,
               },
             },
@@ -105,6 +106,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
               select: {
                 id: true,
                 date: true,
+                type: true,
                 unitNumber: true,
               },
             },
@@ -159,6 +161,7 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
         date: {
           in: [currentDate, beforeDate],
         },
+        type: data.type,
       },
       include: {
         customer: true,
@@ -178,7 +181,20 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
       const unitOldNumber = unitOld?.unitNumber || 0;
       const unitUsed = unitNewNumber - unitOldNumber;
 
-      const amount = data.type === 'W' ? unitUsed * 16 + 50 : unitUsed * 7 + 50 * 0.07;
+      // (ราคาต่อหน่วย * 6 + 50) + 0.07 * (ราคาต่อหน่วย * 6 + 50); => ไฟ
+
+      const amount = data.type === 'W' ? Math.round(+unitUsed * 16 + 50) : Math.round(+unitUsed * 6 + 50 + 0.07 * (+unitUsed * 6 + 50));
+
+      const checkToUpFifty = (status: 'PAY' | 'WAITING', remain: number): number => {
+        switch (status) {
+          case 'WAITING':
+            return 50;
+          case 'PAY':
+            return remain > 0 ? 50 : 0;
+          default:
+            return 0;
+        }
+      };
 
       return cus.transactions.length === 0
         ? {
@@ -224,8 +240,8 @@ export const getAllTransaction = async (req: Request, res: Response, next: NextF
 
             unitUsed,
             amount,
-            overDue: tranEmpBefore ? tranEmpBefore?.remain + 50 : 0, // คงเหลือเดือนที่แล้ว + 50
-            total: tranEmpBefore ? tranEmpBefore?.remain + 50 + amount : amount,
+            overDue: tranEmpBefore ? +tranEmpBefore?.remain + checkToUpFifty(tranEmpBefore.status, +tranEmpBefore?.remain) : 0, // คงเหลือเดือนที่แล้ว + 50
+            total: tranEmpBefore ? +tranEmpBefore?.remain + checkToUpFifty(tranEmpBefore.status, +tranEmpBefore?.remain) + amount : amount,
             pay: 0,
             remain: 0,
             status: 'WAITING',
@@ -800,7 +816,7 @@ export const payTransaction = async (req: Request, res: Response, next: NextFunc
       },
       data: {
         pay: +query.pay,
-        remain: transaction.total - +query.pay,
+        remain: +transaction.total - +query.pay,
         status: 'PAY',
         approvedBy: id,
         approvedAt: new Date(dayjs().format('YYYY-MM-DD')),

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Demo</title>
+  <title>Transactions</title>
   <%- include('../styles/reportStyle.ejs'); %>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +14,7 @@
   <table style="width: 100%; text-align: center; margin-bottom: 10px;">
     <thead>
       <tr>
-        <th style="align-items: center; font-size: 20px; font-weight: 400"><%= headerReport %></th>
+        <th style="align-items: center; font-size: 16px; font-weight: 400"><%= headerReport %></th>
       </tr>
     </thead>
   </table>
@@ -22,46 +22,46 @@
   <table class="table">
     <thead>
       <tr>
-        <th style="width: 1%;" >ลำดับ</th>
-        <th style="width: 1%;" >ประเภท</th>
-        <th style="width: 8%;" >บ้านเลขที่</th>
-        <th style="width: 16%;" >ชื่อ - สกุล</th>
-        <th style="width: 6%;" ><%= dateUnitOld %></th>
-        <th style="width: 6%;" ><%= dateUnitNew %></th>
-        <!-- <th style="width: 8%;" >หน่วยที่ใช้</th> -->
-        <th style="width: 12%;" >ราคาต่อหน่วย</th>
-        <th style="width: 8%;" >ยอดค้าง</th>
-        <th style="width: 8%;" >รวมสุทธิ</th>
-        <th >หมายเหตุ</th>
+        <th style="width: 2%;">#</th>
+        <th style="width: 2%; "></th>
+        <th style="width: 2%;"></th>
+        <th style="width: 7%;">ชื่อ - สกุล</th>
+        <th style="width: 2%;"><%= dateUnitNew %></th>
+        <th style="width: 2%;"><%= dateUnitOld %></th>
+        <th style="width: 4%;">ราคา/หน่วย</th>
+        <th style="width: 3%;">ค้าง</th>
+        <th style="width: 3%;">รวม</th>
+        <th style="width: 3%;">ชำระ</th>
+        <th style="width: 3%;">คงเหลือ</th>
+        <th style="width: 3%;">ผู้รับ</th>
+        <th style="width: 4%;">วันที่รับ</th>
+        <th style="width: 2%;">หมายเหตุ</th>
       </tr>
     </thead>
 
     <tbody>
-      <% getCustomer.map((customer, index) => { %>
+      <% transactions.map((transaction, index) => { %>
         <%
-          // const fullName = `${customer?.prefix?.prefixName} ${customer?.firstName} ${customer?.lastName}`
-          const fullName = `${customer?.firstName} ${customer?.lastName}`
-
-          const type = customer?.transactions[0]?.type === 'W' ? 'น้ำ' : 'ไฟฟ้า'
-          const unitNumberOld = customer?.transactions[0]?.unitOld?.unitNumber
-          const unitNumberNew = customer?.transactions[0]?.unitNew?.unitNumber
-          const unitUsed = customer?.transactions[0]?.unitUsed
-          const amount = customer?.transactions[0]?.amount
-          const overDue = customer?.transactions[0]?.overDue
-          const totalPrice = customer?.transactions[0]?.totalPrice
+          // const fullName = `${customer?.firstName} ${customer?.lastName}`
+          const pay = transaction?.pay ? transaction?.pay : ''
+          const remain = transaction?.remain == 0 || !transaction?.remain ? '' : transaction?.remain
           %>
           <tr>
-        <td><%= ++index %></td>
-        <td><%= type %></td>
-        <td><%= customer?.houseNumber ? customer?.houseNumber : '-' %></td>
-        <td style="text-align: left;"><%= fullName %></td>
-        <td><%= unitNumberOld %></td>
-        <td><%= unitNumberNew %></td>
-        <!-- <td><%= unitUsed %></td> -->
-        <td><%= amount %></td>
-        <td><%= overDue %></td>
-        <td><%= totalPrice %></td>
-        <td></td>
+          <td><%= transaction?.no %></td>
+          <td style="font-size: 8px;"><%= transaction?.houseNumber %></td>
+          <td><%= transaction?.type %></td>
+          <td style="text-align: start;"><%= transaction?.fullName %></td>
+          <td><%= transaction?.unitNew?.unitNumber %></td>
+          <td><%= transaction?.unitOld?.unitNumber %></td>
+          <td><%= transaction?.amount %></td>
+          <td><%= transaction?.overDue %></td>
+          <td><%= transaction?.total %></td>
+          <td><%= pay%></td>
+          <td><%= remain %></td>
+          <td style="text-align: start;"><%= transaction?.approved?.firstName %></td>
+          <td style="text-align: start;"><%= transaction?.approvedAt %></td>
+          <td style="text-align: start;"></td>
+
 
       </tr>
         <% }) %>

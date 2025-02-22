@@ -107,11 +107,11 @@ model Transaction {
   unitNewId Int?  @map("unit_new_id")
 
   unitUsed   Int?       @map("unit_used") // หน่วยน้ำที่ใช้
-  amount     Int? // จำนวนค่าน้ำที่คิดจากหน่วย
-  overDue    Int?       @map("over_due") // ยอดค้าง
-  total      Int?       @map("total")
+  amount     Decimal?   @db.Decimal(10, 2) // จำนวนค่าน้ำที่คิดจากหน่วย
+  overDue    Decimal?   @map("over_due") @db.Decimal(10, 2) // ยอดค้าง
+  total      Decimal?   @map("total") @db.Decimal(10, 2)
   pay        Int?
-  remain     Int?
+  remain     Decimal?   @db.Decimal(10, 2)
   status     BillStatus @default(WAITING)
   zoneId     Int?       @map("zone_id")
   zone       Zone?      @relation(fields: [zoneId], references: [id])

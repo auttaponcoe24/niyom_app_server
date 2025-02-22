@@ -1,16 +1,9 @@
+import cors from 'cors';
+import dayjs from 'dayjs';
 import dotenv from 'dotenv';
 import express, { Request, Response } from 'express';
-import cors from 'cors';
 import morgan from 'morgan';
-import dayjs from 'dayjs';
 import path from 'path';
-import buddhistEra from 'dayjs/plugin/buddhistEra';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-import 'dayjs/locale/th'; // ติดตั้ง locale ภาษาไทย
 
 // Middlewares
 import errorMiddlewares from '@/middlewares/error';
@@ -19,11 +12,19 @@ import notFoundMiddlewares from '@/middlewares/not-found';
 // Routes
 import authRoute from '@/routes/auth.route';
 import customerRoute from '@/routes/customer.route';
-import zoneRoute from '@/routes/zone.route';
-import transactionRoute from '@/routes/transaction.route';
-import unitRoute from '@/routes/unit.route';
 import prefixRoute from '@/routes/prefix.route';
 import reportRoute from '@/routes/report.route';
+import transactionRoute from '@/routes/transaction.route';
+import unitRoute from '@/routes/unit.route';
+import zoneRoute from '@/routes/zone.route';
+
+import 'dayjs/locale/th'; // ติดตั้ง locale ภาษาไทย
+import buddhistEra from 'dayjs/plugin/buddhistEra';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(buddhistEra);
@@ -55,7 +56,7 @@ app.use(express.urlencoded({ extended: true }));
 // ให้ Express เสิร์ฟไฟล์จากโฟลเดอร์ "public"
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
-app.get('/', async (req: Request, res: Response) => {
+app.get('/', async (_req: Request, res: Response) => {
   const test: string = 'Hello world';
   res.status(200).json({ message: test });
 });
