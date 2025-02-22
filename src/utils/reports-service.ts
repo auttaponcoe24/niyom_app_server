@@ -17,10 +17,10 @@ export class ReportsService {
   }
 
   private handleResponse(fileName: string) {
-    const baseUrl = process.env.BASE_URL;
-    const port = process.env.PORT;
+    const baseUrl = process.env.BASE_URL || 'http://localhost';
+    const port = process.env.PORT || '3000';
 
-    return `${baseUrl}`.startsWith('http://localhost') ? `${baseUrl}:${port}/public/${fileName}` : `${baseUrl}/public/${fileName}`;
+    return baseUrl.includes('localhost') ? `${baseUrl}:${port}/public/${fileName}` : `${baseUrl}/public/${fileName}`;
   }
 
   private checkFolderSaveFile() {
@@ -45,6 +45,7 @@ export class ReportsService {
 
   async generatePDF(fileName: string, htmlContent: string, PDFOptions?: PDFOptions) {
     const browser = await puppeteer.launch({
+      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=medium'],
       timeout: 60000,
@@ -73,6 +74,7 @@ export class ReportsService {
 
   async generatePDFStream(htmlContent: string, PDFOptions?: PDFOptions) {
     const browser = await puppeteer.launch({
+      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=medium'],
       timeout: 10 * 60 * 1000,
