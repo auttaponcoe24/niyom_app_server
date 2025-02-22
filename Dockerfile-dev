@@ -34,4 +34,5 @@ RUN yarn prisma generate && yarn build:alias
 EXPOSE 8080
 
 # เริ่มรันแอป
-CMD ["yarn", "run", "start"]
+CMD ["yarn", "start"]
+
