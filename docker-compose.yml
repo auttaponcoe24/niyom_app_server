@@ -8,8 +8,8 @@ services:
     container_name: niyom_app_server
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app # volumes: - .:/app จะทำให้ไฟล์ในเครื่องของคุณ (ในโฟลเดอร์ปัจจุบัน) ถูกแมปเข้าไปที่ /app
+    # volumes:
+    # - .:/app # volumes: - .:/app จะทำให้ไฟล์ในเครื่องของคุณ (ในโฟลเดอร์ปัจจุบัน) ถูกแมปเข้าไปที่ /app
     env_file:
       - .env # ใช้ไฟล์ .env สำหรับการตั้งค่าตัวแปรสภาพแวดล้อม
     restart: always # restart: always หมายความว่า container จะรีสตาร์ทอัตโนมัติเมื่อหยุดทำงาน.
