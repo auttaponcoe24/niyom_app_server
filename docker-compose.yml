@@ -13,3 +13,20 @@ services:
     env_file:
       - .env # ใช้ไฟล์ .env สำหรับการตั้งค่าตัวแปรสภาพแวดล้อม
     restart: always # restart: always หมายความว่า container จะรีสตาร์ทอัตโนมัติเมื่อหยุดทำงาน.
+
+  nginx:
+    image: nginx:latest
+    container_name: niyom_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # mount คอนฟิก Nginx
+    ports:
+      - "80:80"  # expose port 80 สำหรับ HTTP
+    depends_on:
+      - app  # ต้องรอแอปก่อน
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
