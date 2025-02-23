@@ -1,19 +1,15 @@
-version: '3.9'
+version: '3.8'
 
 services:
   app:
-    container_name: 'niyom_app_server'
     build:
       context: .
       dockerfile: ./Dockerfile
+    container_name: niyom_app_server
     ports:
-      - '3000:8000' # Map port 3000 ของ host กับ port 8000 ของ container
+      - "8000:8000"
+    volumes:
+      - .:/app # volumes: - .:/app จะทำให้ไฟล์ในเครื่องของคุณ (ในโฟลเดอร์ปัจจุบัน) ถูกแมปเข้าไปที่ /app
     env_file:
       - .env # ใช้ไฟล์ .env สำหรับการตั้งค่าตัวแปรสภาพแวดล้อม
-
-
-volumes:
-  mongo_data:
-    driver: local
-  postgres_data:
-    driver: local
+    restart: always # restart: always หมายความว่า container จะรีสตาร์ทอัตโนมัติเมื่อหยุดทำงาน.

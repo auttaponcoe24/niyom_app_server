@@ -201,3 +201,42 @@ export const getUserAll = async (req: Request, res: Response, next: NextFunction
     return next(error);
   }
 };
+
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.user.data;
+    const values = req.body as {
+      password: string;
+      newPassword: string;
+    };
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!user) return next(createError('User not found', 404));
+
+    // เปรียบเทียบรหัสผ่านเดิม
+    const isCheckPassword = await bcrypt.compare(values.password, user.password);
+
+    if (!isCheckPassword) {
+      // ถ้ารหัสผ่านเดิมไม่ถูกต้องให้ส่ง error กลับไป
+      return next(createError('Invalid password', 401));
+    }
+
+    // รหัสผ่านเดิมถูกต้อง สามารถดำเนินการเปลี่ยนรหัสผ่านใหม่ได้
+    const updatedUser = await prisma.user.update({
+      where: { id: id },
+      data: {
+        password: await bcrypt.hash(values.newPassword, 10), // แฮชรหัสผ่านใหม่
+      },
+    });
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

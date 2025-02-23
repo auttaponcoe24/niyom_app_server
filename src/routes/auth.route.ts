@@ -1,4 +1,4 @@
-import { getProfile, getUserAll, login, register, updateProfile } from '@/controllers/auth.controller';
+import { changePassword, getProfile, getUserAll, login, register, updateProfile } from '@/controllers/auth.controller';
 import authMiddleware from '@/middlewares/authenticate';
 import { Router } from 'express';
 
@@ -13,5 +13,7 @@ router.get('/profile', authMiddleware, getProfile);
 router.patch('/update/profile', authMiddleware, updateProfile);
 
 router.get('/get-all', authMiddleware, getUserAll);
+
+router.patch('/change-password', authMiddleware, changePassword);
 
 export default router;
