@@ -1,9 +1,10 @@
 # Typescript Template API Service (for Orbix Trade)
 
+# 1
 
 [![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
 
-เขียนโดยใช้ Node JS (Express) Prisma และใช้ PostgreSQL  เป็น Database
+เขียนโดยใช้ Node JS (Express) Prisma และใช้ PostgreSQL เป็น Database
 
 ## Features
 
@@ -32,6 +33,6 @@ yarn install
 yarn start
 ```
 
-
 ## License
+
 MIT
