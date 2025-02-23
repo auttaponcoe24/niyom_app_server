@@ -57,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
 app.get('/', async (_req: Request, res: Response) => {
-  const test: string = 'Hello world';
+  const test: string = 'Hello world111';
   res.status(200).json({ message: test });
 });
 

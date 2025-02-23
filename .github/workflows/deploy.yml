@@ -1,45 +1,45 @@
-name: Deploy to DigitalOcean
+name: Deploy Niyom App Server
 
 on:
   push:
     branches:
-      - main # หรือเปลี่ยนเป็น branch ที่ต้องการ
+      - main
 
 jobs:
-  deploy:
+  deploy-to-server:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Deploy to DigitalOcean
-        uses: appleboy/ssh-action@v0.1.0 # ใช้เวอร์ชันที่เสถียรกว่า
+      - name: Build Docker image
+        run: |
+          docker build -t niyom_app_server:${{ github.sha }} .
+
+      - name: Save Docker image as tar
+        run: |
+          docker save niyom_app_server:${{ github.sha }} -o niyom_app_server.tar
+          chmod 644 niyom_app_server.tar
+
+      - name: Copy Docker image to server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.DO_HOST }} # IP หรือ Hostname ของเซิร์ฟเวอร์ DigitalOcean
-          username: ${{ secrets.DO_USER }} # ชื่อผู้ใช้ SSH
-          key: ${{ secrets.DO_SSH_KEY }} # SSH private key ที่เก็บใน GitHub Secrets คำสั่ง cat ~/.ssh/id_rsa บนcmd
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: 'niyom_app_server.tar'
+          target: '/var/www/niyom_app_server/'
+
+      - name: Load Docker image and run container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
           script: |
-            mkdir -p ~/.ssh
-            echo "$DO_SSH_KEY" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            # ทำการ pull โค้ดล่าสุดจาก Git
             cd /var/www/niyom_app_server
-            git pull origin main
-
-            # ดำเนินการหยุด Docker container ที่ทำงานอยู่
-            docker-compose down
-
-            # สร้างและเริ่ม Docker container ใหม่ในโหมด detached
-            docker-compose up -d --build
-
-      - name: Add SSH known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        run: |
-          mkdir -p ~/.ssh
-          echo "$DO_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh -v -i ~/.ssh/id_rsa ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} "echo 'SSH connected successfully'"
+            docker load -i niyom_app_server.tar
+            docker stop niyom_app_server || true
+            docker rm niyom_app_server || true
+            docker run -d -p 8000:8000 --name niyom_app_server niyom_app_server:${{ github.sha }}
