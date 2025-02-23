@@ -17,7 +17,7 @@ jobs:
         with:
           host: ${{ secrets.DO_HOST }} # IP หรือ Hostname ของเซิร์ฟเวอร์ DigitalOcean
           username: ${{ secrets.DO_USER }} # ชื่อผู้ใช้ SSH
-          key: ${{ secrets.DO_SSH_KEY }} # SSH private key ที่เก็บใน GitHub Secrets คำสั่ง cat ~/.ssh/id_rsa บนcmd
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # SSH private key ที่เก็บใน GitHub Secrets คำสั่ง cat ~/.ssh/id_rsa บนcmd
           script: |
             # ทำการ pull โค้ดล่าสุดจาก Git
             cd /var/www/niyom_app_server
