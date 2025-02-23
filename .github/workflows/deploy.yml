@@ -13,13 +13,18 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Deploy to DigitalOcean
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.0 # ใช้เวอร์ชันที่เสถียรกว่า
         with:
-          host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }}
-          key: ${{ secrets.DO_SSH_KEY }}
+          host: ${{ secrets.DO_HOST }} # IP หรือ Hostname ของเซิร์ฟเวอร์ DigitalOcean
+          username: ${{ secrets.DO_USER }} # ชื่อผู้ใช้ SSH
+          key: ${{ secrets.DO_SSH_KEY }} # SSH private key ที่เก็บใน GitHub Secrets
           script: |
+            # ทำการ pull โค้ดล่าสุดจาก Git
             cd /var/www/niyom_app_server
             git pull origin main
-            docker compose down
+
+            # ดำเนินการหยุด Docker container ที่ทำงานอยู่
+            docker-compose down
+
+            # สร้างและเริ่ม Docker container ใหม่ในโหมด detached
             docker-compose up -d --build
